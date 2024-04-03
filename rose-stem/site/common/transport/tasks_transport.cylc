@@ -5,7 +5,84 @@
 {# ########################################################################### #}
 {% do LOG.debug("Entered site/common/transport/tasks_transport.cylc") %}
 
-{% if task_ns.conf_name == "hadley_dcmip_mol-C48" %}
+{# ########################### #}
+{# Developer + All Group Tasks #}
+{# ########################### #}
+
+{% if task_ns.conf_name == "cylinder_xz_ffsl-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["cylinder_xz_ffsl"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 4,
+        "tsteps": 10,
+        "mpi_parts": 4,
+    }) %}
+
+{% elif task_ns.conf_name == "cylinder_xz_mol-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["cylinder_xz_mol"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 4,
+        "tsteps": 10,
+        "mpi_parts": 4,
+    }) %}
+
+{% elif task_ns.conf_name == "cylinder_xz_split-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["cylinder_xz_split"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 4,
+        "tsteps": 10,
+        "mpi_parts": 4,
+    }) %}
+
+{% elif task_ns.conf_name == "eternal_fountain_xz_split_vhv-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["eternal_fountain_xz_split_vhv"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 2,
+        "tsteps": 10,
+        "mpi_parts": 5,
+    }) %}
+
+{% elif task_ns.conf_name == "hadley_dcmip_ffsl-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_ffsl"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 10,
+        "mpi_parts": 12,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "hadley_dcmip_ffsl_overset-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_ffsl_overset"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 10,
+        "mpi_parts": 12,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "hadley_dcmip_ffsl_3d_overset-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_ffsl_3d_overset"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 10,
+        "mpi_parts": 12,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "hadley_dcmip_mol-C48" %}
 
     {% do task_dict.update({
         "opt_confs": ["hadley_dcmip_mol"],
@@ -13,7 +90,80 @@
         "DT": 300,
         "tsteps": 10,
         "mpi_parts": 12,
-        "kgo_checks": ["checksum"],
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "hadley_dcmip_mol1d_overset-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_mol1d_overset"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 10,
+        "mpi_parts": 12,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "hadley_dcmip_split-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_split"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 10,
+        "mpi_parts": 12,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cosine_ffsl-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cosine_ffsl"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 10,
+        "mpi_parts": 6,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cosine_mol-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cosine_mol"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 10,
+        "mpi_parts": 6,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cos_phi_ffsl_nirv_spt_edges-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_ffsl_nirv_spt_edges"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 10,
+        "mpi_parts": 6,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cos_phi_ffsl_ppm_spt_edges-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_ffsl_ppm_spt_edges"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 10,
+        "mpi_parts": 6,
+        "use_xios": false,
+    }) %}
+
+{% elif task_ns.conf_name == "canned" %}
+
+    {% do task_dict.update({
+        "app_name": "canned_test",
+        "kgo_checks": [],
     }) %}
 
 {% elif task_ns.conf_name == "unit_tests" %}
@@ -21,6 +171,106 @@
     {% do task_dict.update({
         "placeholder": true,
     }) %}
+
+{# ################# #}
+{# Next Config Tasks #}
+{# ################# #}
+
+{% elif task_ns.conf_name == "curl_free_reversible_xz_ffsl_bigcfl-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["curl_free_reversible_xz_ffsl_bigcfl"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 40,
+        "tsteps": 50,
+        "mpi_parts": 4,
+        "wallclock": 180,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v:constant xz all linear curl_free",
+    }) %}
+
+{% elif task_ns.conf_name == "cylinder_xz_ffsl_bigcfl-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["cylinder_xz_ffsl_bigcfl"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 50,
+        "tsteps": 40,
+        "mpi_parts": 4,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v xz all linear cylinder",
+    }) %}
+
+{% elif task_ns.conf_name == "deformation_2d_ffsl_bigcfl-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["deformation_2d_ffsl_bigcfl"],
+        "resolution": "C32",
+        "DT": 0.1,
+        "tsteps": 50,
+        "mpi_parts": 6,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v xy -1 linear deformation",
+    }) %}
+
+{% elif task_ns.conf_name == "eternal_fountain_xz_ffsl-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["eternal_fountain_xz_ffsl"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 2,
+        "tsteps": 500,
+        "mpi_parts": 4,
+        "wallclock": 180,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v xz all linear eternal_fountain",
+    }) %}
+
+{% elif task_ns.conf_name == "hadley_dcmip_ffsl_overset_bigcfl-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_ffsl_overset_bigcfl"],
+        "resolution": "C48",
+        "DT": 3600,
+        "tsteps": 24,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v yz all linear hadley",
+    }) %}
+
+{% elif task_ns.conf_name == "next-sbr_hori_cos_phi_ffsl_nirv_spt_edges-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_ffsl_nirv_spt_edges"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 288,
+        "mpi_parts": 6,
+        "use_xios": false,
+        "wallclock": 20,
+        "kgo_checks": [],
+        "plot_str": "errors.py diagTransport $NODAL_DATA_DIR rho:theta:tracer_con:tracer_adv:m_v T000288 -1 -91 0 0.01 $PLOT_DIR",
+    }) %}
+
+{% elif task_ns.conf_name == "next-sbr_hori_cos_phi_ffsl_ppm_spt_edges-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_ffsl_ppm_spt_edges"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 288,
+        "mpi_parts": 6,
+        "use_xios": false,
+        "wallclock": 20,
+        "kgo_checks": [],
+        "plot_str": "errors.py diagTransport $NODAL_DATA_DIR rho:theta:tracer_con:tracer_adv:m_v T000288 -1 -91 0 0.01 $PLOT_DIR",
+    }) %}
+
+{# ############# #}
+{# Generic Tasks #}
+{# ############# #}
 
 {% elif task.startswith("build") %}
 
@@ -30,12 +280,24 @@
 
 {% endif %}
 
+{% if not task_dict %}
+    {% include "site/common/transport/tasks_transport_ffsl.cylc" %}
+{% endif %}
+{% if not task_dict %}
+    {% include "site/common/transport/tasks_transport_vertical-slice.cylc" %}
+{% endif %}
+{% if not task_dict %}
+    {% include "site/common/transport/tasks_transport_comparison.cylc" %}
+{% endif %}
 
 {# Set default values for Transport tasks #}
 {% if task_dict %}
     {% do task_dict.update({"application_dir": "apps/applications/transport"}) %}
     {% if "app_name" not in task_dict %}
         {% do task_dict.update({"app_name": "transport"}) %}
+    {% endif %}
+    {% if "kgo_checks" not in task_dict %}
+        {% do task_dict.update({"kgo_checks": ["checksum"]}) %}
     {% endif %}
 {% endif %}
 

@@ -1,0 +1,392 @@
+{# ########################################################################### #}
+{# (c) Crown copyright 2024 Met Office. All rights reserved. #}
+{# The file LICENCE, distributed with this code, contains details of the terms #}
+{# under which the code may be used. #}
+{# ########################################################################### #}
+{% do LOG.debug("Entered site/common/transport/tasks_transport_comparison.cylc") %}
+
+{% if task_ns.conf_name == "eternal_fountain_xz_mol-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["eternal_fountain_xz_mol"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 2,
+        "tsteps": 500,
+        "mpi_parts": 4,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v xz all linear eternal_fountain",
+    }) %}
+
+{% elif task_ns.conf_name == "eternal_fountain_xz_split_hvh-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["eternal_fountain_xz_split_hvh"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 2,
+        "tsteps": 500,
+        "mpi_parts": 4,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v:w3_aerosol:wt_aerosol xz all linear eternal_fountain",
+    }) %}
+
+{% elif task_ns.conf_name == "eternal_fountain_xz_split_vhv-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["eternal_fountain_xz_split_vhv"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 2,
+        "tsteps": 500,
+        "mpi_parts": 4,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v:w3_aerosol:wt_aerosol xz all linear eternal_fountain",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-hadley_dcmip_mol-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_mol"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v yz all linear hadley",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-hadley_dcmip_ffsl-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_ffsl"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v yz all linear hadley",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-hadley_dcmip_ffsl_3d-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_ffsl_3d"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v yz all linear hadley",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-hadley_dcmip_mol1d_overset-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_mol1d_overset"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v yz all linear hadley",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-hadley_dcmip_ffsl_overset-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_ffsl_overset"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v yz all linear hadley",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-hadley_dcmip_ffsl_3d_overset-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_ffsl_3d_overset"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v yz all linear hadley",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-hadley_dcmip_split-C48" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["hadley_dcmip_split"],
+        "resolution": "C48",
+        "DT": 300,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v yz all linear hadley",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-cylinder_xz_mol-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["cylinder_xz_mol"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 4,
+        "tsteps": 500,
+        "mpi_parts": 4,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v xz all linear cylinder",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-cylinder_xz_ffsl-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["cylinder_xz_ffsl"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 4,
+        "tsteps": 500,
+        "mpi_parts": 4,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v xz all linear cylinder",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-cylinder_xz_ffsl_3d-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["cylinder_xz_ffsl_3d"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 4,
+        "tsteps": 500,
+        "mpi_parts": 4,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v xz all linear cylinder",
+    }) %}
+
+{% elif task_ns.conf_name == "comp-cylinder_xz_split-BiP100x10-20x20" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["cylinder_xz_split"],
+        "resolution": "BiP100x10-20x20",
+        "DT": 4,
+        "tsteps": 500,
+        "mpi_parts": 4,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:m_v xz all linear cylinder",
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_vertical_mol-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_vertical_mol"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:constant:m_v xz all linear sbr",
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_vertical_ffsl-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_vertical_ffsl"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:constant:m_v xz all linear sbr",
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_vertical_split-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_vertical_split"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:constant:m_v xz all linear sbr",
+    }) %}
+
+{% elif task_ns.conf_name == "dcmip101_mol-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["dcmip101_mol"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v xy all linear dcmip101",
+    }) %}
+
+{% elif task_ns.conf_name == "dcmip101_ffsl-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["dcmip101_ffsl"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v xy all linear dcmip101",
+    }) %}
+
+{% elif task_ns.conf_name == "dcmip101_split-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["dcmip101_split"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR theta:tracer_con:tracer_adv:constant:m_v xy all linear dcmip101",
+    }) %}
+
+{% elif task_ns.conf_name == "vertical_deformation_mol-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["vertical_deformation_mol"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:constant:m_v xz all linear vert_def",
+    }) %}
+
+{% elif task_ns.conf_name == "vertical_deformation_ffsl-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["vertical_deformation_ffsl"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:constant:m_v xz all linear vert_def",
+    }) %}
+
+{% elif task_ns.conf_name == "vertical_deformation_split-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["vertical_deformation_split"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 288,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR rho:theta:tracer_con:tracer_adv:constant:m_v xz all linear vert_def",
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cos_phi_mol-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_mol"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 288,
+        "mpi_parts": 6,
+        "use_xios": false,
+        "wallclock": 20,
+        "kgo_checks": [],
+        "plot_str": "errors.py diagTransport $NODAL_DATA_DIR rho:theta:tracer_con:tracer_adv T000288 -1 -91 0 0.01 $PLOT_DIR",
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cos_phi_ffsl-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_ffsl"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 288,
+        "mpi_parts": 6,
+        "use_xios": false,
+        "wallclock": 20,
+        "kgo_checks": [],
+        "plot_str": "errors.py diagTransport $NODAL_DATA_DIR rho:theta:tracer_con:tracer_adv T000288 -1 -91 0 0.01 $PLOT_DIR",
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cos_phi_mol1d-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_mol1d"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 288,
+        "mpi_parts": 6,
+        "use_xios": false,
+        "wallclock": 20,
+        "kgo_checks": [],
+        "plot_str": "errors.py diagTransport $NODAL_DATA_DIR rho:theta:tracer_con:tracer_adv T000288 -1 -91 0 0.01 $PLOT_DIR",
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cos_phi_mol1d_overset-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_mol1d_overset"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 288,
+        "mpi_parts": 6,
+        "use_xios": false,
+        "wallclock": 20,
+        "kgo_checks": [],
+        "plot_str": "errors.py diagTransport $NODAL_DATA_DIR rho:theta:tracer_con:tracer_adv T000288 -1 -91 0 0.01 $PLOT_DIR",
+    }) %}
+
+{% elif task_ns.conf_name == "sbr_hori_cos_phi_ffsl_overset-C32" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["sbr_hori_cos_phi_ffsl_overset"],
+        "resolution": "C32",
+        "DT": 4050,
+        "tsteps": 288,
+        "mpi_parts": 6,
+        "use_xios": false,
+        "wallclock": 20,
+        "kgo_checks": [],
+        "plot_str": "errors.py diagTransport $NODAL_DATA_DIR rho:theta:tracer_con:tracer_adv T000288 -1 -91 0 0.01 $PLOT_DIR",
+    }) %}
+
+{% elif task_ns.conf_name == "four_part_sbr-C24" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["four_part_sbr"],
+        "resolution": "C24",
+        "DT": 3600,
+        "tsteps": 576,
+        "mpi_parts": 12,
+        "wallclock": 60,
+        "kgo_checks": [],
+        "plot_str": "spherical_and_vertical_slice_ugrid_plot.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR w2_vector1:w2_vector2:w2_vector3 xy all linear four_part_sbr",
+    }) %}
+
+{% endif %}
+
+{% do LOG.debug("Finished in site/common/transport/tasks_transport_comparison.cylc") %}
