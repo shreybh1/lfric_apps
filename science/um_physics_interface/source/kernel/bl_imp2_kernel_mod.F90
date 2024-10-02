@@ -40,7 +40,7 @@ module bl_imp2_kernel_mod
   !>
   type, public, extends(kernel_type) :: bl_imp2_kernel_type
     private
-    type(arg_type) :: meta_args(54) = (/                                         &
+    type(arg_type) :: meta_args(56) = (/                                         &
          arg_type(GH_SCALAR, GH_INTEGER, GH_READ),                                &! outer
          arg_type(GH_SCALAR, GH_INTEGER, GH_READ),                                &! loop
          arg_type(GH_FIELD,  GH_REAL,    GH_READ,      WTHETA),                   &! wetrho_in_wth
@@ -63,6 +63,8 @@ module bl_imp2_kernel_mod
          arg_type(GH_FIELD,  GH_REAL,    GH_READWRITE, WTHETA),                   &! cf_ice
          arg_type(GH_FIELD,  GH_REAL,    GH_READWRITE, WTHETA),                   &! cf_liq
          arg_type(GH_FIELD,  GH_REAL,    GH_READWRITE, WTHETA),                   &! cf_bulk
+         arg_type(GH_FIELD,  GH_REAL,    GH_READWRITE, WTHETA),                   &! cca
+         arg_type(GH_FIELD,  GH_REAL,    GH_READWRITE, WTHETA),                   &! ccw
          arg_type(GH_FIELD,  GH_REAL,    GH_READ,      WTHETA),                   &! rh_crit_wth
          arg_type(GH_FIELD,  GH_REAL,    GH_READ,      WTHETA),                   &! dsldzm
          arg_type(GH_FIELD,  GH_REAL,    GH_READ,      WTHETA),                   &! wvar
@@ -132,6 +134,8 @@ contains
   !> @param[in,out] cf_ice               Ice cloud fraction
   !> @param[in,out] cf_liq               Liquid cloud fraction
   !> @param[in,out] cf_bulk              Bulk cloud fraction
+  !> @param[in,out] cca                  Convective cloud amount (fraction)
+  !> @param[in,out] ccw                  Convective cloud water (kg/kg) (can be ice or liquid)
   !> @param[in]     rh_crit_wth          Critical relative humidity
   !> @param[in]     dsldzm               Liquid potential temperature gradient in wth
   !> @param[in]     wvar                 Vertical velocity variance in wth
@@ -214,6 +218,8 @@ contains
                           cf_ice,                             &
                           cf_liq,                             &
                           cf_bulk,                            &
+                          cca,                                &
+                          ccw,                                &
                           rh_crit_wth,                        &
                           dsldzm,                             &
                           wvar,                               &
@@ -306,7 +312,8 @@ contains
                                                             cf_area, cf_ice,   &
                                                             cf_liq, cf_bulk,   &
                                                             dqw_wth, dtl_wth,  &
-                                                            qw_wth, tl_wth
+                                                            qw_wth, tl_wth,    &
+                                                            cca, ccw
     real(kind=r_def), dimension(undf_w3),  intent(in)   :: exner_in_w3,        &
                                                            height_w3,          &
                                                            rdz_tq_bl,          &
@@ -857,11 +864,23 @@ contains
           ! Parametrize "forced cumulus clouds" at top of well-mixed BL
           !------------------------------------------------------------
           if (forced_cu >= on) then
+            do i = 1, seg_len
+              do k = 1, nlayers
+                cca0(i,1,k) = cca(map_wth(1,i) + k)
+                ccw0(i,1,k) = ccw(map_wth(1,i) + k)
+              end do
+            end do
             call pc2_bl_forced_cu( zhnl, dzh, zlcl, bl_type_3, bl_type_6,      &
                                    z_theta, qcl_inv_top,                       &
                                    cca0, ccw0, ccb0, cct0, lcbase0,            &
                                    cfl_latest, cf_latest,                      &
                                    qcl_latest, q_latest, t_latest, l_wtrac)
+            do k = 1, nlayers
+              do i = 1, seg_len
+                cca(map_wth(1,i) + k) = cca0(i,1,k)
+                ccw(map_wth(1,i) + k) = ccw0(i,1,k)
+              end do
+            end do
           end if  ! test on forced_cu
 
           ! --------------------------------------------------------------------

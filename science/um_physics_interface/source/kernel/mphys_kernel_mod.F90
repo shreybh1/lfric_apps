@@ -32,7 +32,7 @@ private
 
 type, public, extends(kernel_type) :: mphys_kernel_type
   private
-  type(arg_type) :: meta_args(47) = (/                                      &
+  type(arg_type) :: meta_args(48) = (/                                      &
        arg_type(GH_FIELD, GH_REAL, GH_READ,  WTHETA),                       & ! mv_wth
        arg_type(GH_FIELD, GH_REAL, GH_READ,  WTHETA),                       & ! ml_wth
        arg_type(GH_FIELD, GH_REAL, GH_READ,  WTHETA),                       & ! mi_wth
@@ -61,6 +61,7 @@ type, public, extends(kernel_type) :: mphys_kernel_type
        arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_1),    & ! ls_snow_2d
        arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_1),    & ! ls_graup_2d
        arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_1),    & ! lsca_2d
+       arg_type(GH_FIELD, GH_REAL, GH_READWRITE, WTHETA),                   & ! precfrac
        arg_type(GH_FIELD, GH_REAL, GH_WRITE, WTHETA),                       & ! ls_rain_3d
        arg_type(GH_FIELD, GH_REAL, GH_WRITE, WTHETA),                       & ! ls_snow_3d
        arg_type(GH_FIELD, GH_REAL, GH_WRITE, WTHETA),                       & ! autoconv
@@ -121,6 +122,7 @@ contains
 !> @param[in,out] ls_snow_2d          Large scale snow from twod_fields
 !> @param[in,out] ls_graup_2d         Large scale graupel from twod_fields
 !> @param[in,out] lsca_2d             Large scale cloud amount (2d)
+!> @param[in,out] precfrac            3D precipitation fraction
 !> @param[in,out] ls_rain_3d          Large scale rain from 3d fields (kg m-2 s-1)
 !> @param[in,out] ls_snow_3d          Large scale snow from 3d fields (kg m-2 s-1)
 !> @param[in,out] autoconv            Rain autoconversion rate (kg kg-1 s-1)
@@ -175,6 +177,7 @@ subroutine mphys_code( nlayers, seg_len,            &
                        dmr_wth,  dmg_wth,           &
                        ls_rain_2d, ls_snow_2d,      &
                        ls_graup_2d, lsca_2d,        &
+                       precfrac,                    &
                        ls_rain_3d, ls_snow_3d,      &
                        autoconv, accretion,         &
                        rim_cry, rim_agg,            &
@@ -274,6 +277,7 @@ subroutine mphys_code( nlayers, seg_len,            &
     real(kind=r_def), intent(inout), dimension(undf_2d)  :: ls_snow_2d
     real(kind=r_def), intent(inout), dimension(undf_2d)  :: ls_graup_2d
     real(kind=r_def), intent(inout), dimension(undf_2d)  :: lsca_2d
+    real(kind=r_def), intent(inout), dimension(undf_wth) :: precfrac
     real(kind=r_def), intent(inout), dimension(undf_wth) :: ls_rain_3d
     real(kind=r_def), intent(inout), dimension(undf_wth) :: ls_snow_3d
     real(kind=r_def), intent(inout), dimension(undf_wth) :: autoconv
@@ -518,39 +522,14 @@ subroutine mphys_code( nlayers, seg_len,            &
 
     if ( l_mcr_precfrac ) then
       ! Prognostic precipitation fraction...
-
+      ! set from LFRic input prognostic
       allocate (precfrac_work (seg_len, 1, nlayers) )
-
-      ! Prognostic precip fraction not yet included in lfric.
-      ! For now, just initialise it to 1 if any precip-mass is present,
-      ! 0 otherwise.  It will evolve freely during the loop over microphysics
-      ! sub-steps inside ls_ppn, but will get reset to 0 or 1 each
-      ! model timestep.
-      if ( l_mcr_qgraup .and. l_subgrid_graupel_frac ) then
-        ! If using graupel and including it within the precip fraction
-        j = 1
-        do k = 1, nlayers
-          do i = 1, seg_len
-            if ( qrain_work(i,j,k)+qgraup_work(i,j,k) > mprog_min ) then
-              precfrac_work(i,j,k) = 1.0_r_um
-            else
-              precfrac_work(i,j,k) = 0.0_r_um
-            end if
-          end do ! i
-        end do ! k
-      else  ! ( l_mcr_qgraup .and. l_subgrid_graupel_frac )
-        ! Otherwise, precfrac is just the rain fraction
-        j = 1
-        do k = 1, nlayers
-          do i = 1, seg_len
-            if ( qrain_work(i,j,k) > mprog_min ) then
-              precfrac_work(i,j,k) = 1.0_r_um
-            else
-              precfrac_work(i,j,k) = 0.0_r_um
-            end if
-          end do ! i
-        end do ! k
-      end if  ! ( l_mcr_qgraup .and. l_subgrid_graupel_frac )
+      j = 1
+      do k = 1, nlayers
+        do i = 1, seg_len
+          precfrac_work(i,j,k) = precfrac(map_wth(1,i)+k)
+        end do ! i
+      end do ! k
 
     else  ! ( l_mcr_precfrac )
       ! Prognostic precipitation fraction switched off; minimal allocation
@@ -830,6 +809,13 @@ subroutine mphys_code( nlayers, seg_len,            &
       ls_rain_3d(map_wth(1,i) + k) = ls_rain3d(i,j,k)
       ls_snow_3d(map_wth(1,i) + k) = ls_snow3d(i,j,k)
     end do ! model levels
+
+    if ( l_mcr_precfrac ) then
+      do k = 1, nlayers
+        precfrac(map_wth(1,i)+k) = precfrac_work(i,j,k)
+      end do ! k
+      precfrac(map_wth(1,i)+0) = precfrac(map_wth(1,i)+1)
+    end if
 
     ! Copy diagnostics if selected: autoconversion, accretion, riming rates &
     ! radar reflectivity.

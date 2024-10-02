@@ -58,7 +58,10 @@ module um_physics_init_mod
                                         sg_orog_mixing_none,                   &
                                         sg_orog_mixing_shear_plus_lambda,      &
                                         zhloc_depth_fac_in => zhloc_depth_fac, &
-                                        bl_levels_in => bl_levels
+                                        bl_levels_in => bl_levels,             &
+                                        kprof_cu_in => kprof_cu,               &
+                                        kprof_cu_buoy_integ,                   &
+                                        kprof_cu_buoy_integ_low
 
   use cloud_config_mod,          only : scheme, scheme_smith, scheme_pc2,     &
                                         scheme_bimodal,                       &
@@ -75,13 +78,19 @@ module um_physics_init_mod
                                         falliceshear_method_constant,         &
                                         subgrid_qv, ice_width_in => ice_width,&
                                         ez_subcrit, ez_max,  &
-                                        two_d_fsd_factor_in => two_d_fsd_factor
+                                       two_d_fsd_factor_in => two_d_fsd_factor,&
+                                       pc2_init_logic, pc2_init_logic_original,&
+                                       pc2_init_logic_smooth
 
   use convection_config_mod,     only : cv_scheme,                    &
                                         cv_scheme_gregory_rowntree,   &
                                         cv_scheme_lambert_lewis,      &
+                                        cv_scheme_comorph,            &
                                         number_of_convection_substeps,&
-                                        cape_timescale_in => cape_timescale
+                                        cape_timescale_in => cape_timescale, &
+                                     par_gen_mass_fac_in => par_gen_mass_fac, &
+                                     par_gen_rhpert_in => par_gen_rhpert,     &
+                                     par_radius_ppn_max_in => par_radius_ppn_max
 
   use extrusion_config_mod,      only : domain_top, number_of_layers
 
@@ -102,7 +111,10 @@ module um_physics_init_mod
                                         fcrit_in => fcrit,                   &
                                         nsigmasf_in => nsigmasf,             &
                                         nscalesf_in => nscalesf,             &
-                                        microphysics_casim
+                                        microphysics_casim,                  &
+                                        ci_input_in => ci_input,             &
+                                        cic_input_in => cic_input,           &
+                                        c_r_correl_in => c_r_correl
 
   use mixing_config_mod,         only : smagorinsky,                 &
                                         mixing_method => method,     &
@@ -179,7 +191,7 @@ module um_physics_init_mod
 
 
   ! Other LFRic modules used
-  use constants_mod,        only : i_def, l_def, r_um, i_um, rmdi, r_def, r_bl
+  use constants_mod,        only : i_def, l_def, r_um, i_um, r_def, r_bl
   use log_mod,              only : log_event,         &
                                    log_scratch_space, &
                                    LOG_LEVEL_ERROR,   &
@@ -199,11 +211,15 @@ module um_physics_init_mod
   integer(i_def), protected :: mode_dimen
   integer(i_def), protected :: sw_band_mode
   integer(i_def), protected :: lw_band_mode
+  real(r_def), protected :: fsd_min_conv_frac
+  real(r_def), protected :: fsd_conv_const
+  real(r_def), protected :: fsd_nonconv_const
 
   private
   public :: um_physics_init, &
             n_radaer_mode, mode_dimen, sw_band_mode, lw_band_mode, &
-            n_aer_mode_sw, n_aer_mode_lw
+            n_aer_mode_sw, n_aer_mode_lw, fsd_min_conv_frac, fsd_conv_const, &
+            fsd_nonconv_const
 
 contains
 
@@ -236,7 +252,7 @@ contains
          split_tke_and_inv, l_noice_in_turb, l_use_var_fixes,              &
          i_interp_local_cf_dbdz, tke_diag_fac, a_ent_2, dec_thres_cloud,   &
          dec_thres_cu, near_neut_z_on_l, blend_gridindep_fa,               &
-         specified_fluxes_tstar
+         specified_fluxes_tstar, buoy_integ_low
     use cloud_inputs_mod, only: i_cld_vn, forced_cu, i_rhcpt, i_cld_area,  &
          rhcrit, ice_fraction_method,falliceshear_method, cff_spread_rate, &
          l_subgrid_qv, ice_width, min_liq_overlap, i_eacf, not_mixph,      &
@@ -246,7 +262,7 @@ contains
          check_run_cloud, l_pc2_implicit_erosion,                          &
          cloud_pc2_tol, cloud_pc2_tol_2,                                   &
          forced_cu_fac, i_pc2_conv_coupling, allicetdegc, starticetkelvin, &
-         l_bm_ez_subcrit_only, ez_max_bm
+         l_bm_ez_subcrit_only, ez_max_bm, l_pc2_homog_conv_pressure
     use cloud_config_mod, only: cld_fsd_hill
     use cv_run_mod, only: icvdiag, cvdiag_inv, cvdiag_sh_wtest,            &
          limit_pert_opt, tv1_sd_opt, iconv_congestus, iconv_deep,          &
@@ -277,7 +293,7 @@ contains
          adv_conv_prog_dtheta, adv_conv_prog_dq,                           &
          tau_conv_prog_precip, tau_conv_prog_dtheta, tau_conv_prog_dq,     &
          prog_ent_grad, prog_ent_int, prog_ent_max, prog_ent_min,          &
-         ent_fac_sh, c_mass_sh, orig_mdet_fac
+         ent_fac_sh, c_mass_sh, orig_mdet_fac, i_cv_comorph
     use cv_param_mod, only: mtrig_ntml, md_pert_efrac
     use cv_stash_flg_mod, only: set_convection_output_flags
     use cv_set_dependent_switches_mod, only: cv_set_dependent_switches
@@ -295,6 +311,7 @@ contains
     use g_wave_input_mod, only: ussp_launch_factor, wavelstar, l_add_cgw,  &
                                 cgw_scale_factor, i_moist, scale_aware,    &
                                 middle, var
+    use missing_data_mod, only: rmdi, imdi
     use mphys_bypass_mod, only: mphys_mod_top,                               &
          qcf2_idims_start, qcf2_idims_end, qcf2_jdims_start, qcf2_jdims_end, &
          qcf2_kdims_end
@@ -313,7 +330,8 @@ contains
         l_separate_process_rain, l_mcr_qcf2,                                 &
         l_mcr_qgraup, casim_max_sed_length, fixed_number, wvarfac,           &
         l_orograin, l_orogrime, l_orograin_block,                            &
-        fcrit, nsigmasf, nscalesf, l_progn_tnuc, mp_czero, mp_tau_lim
+        fcrit, nsigmasf, nscalesf, l_progn_tnuc, mp_czero, mp_tau_lim,       &
+        l_subgrid_graupel_frac, l_mcr_precfrac
     use mphys_psd_mod, only: x1g, x2g, x4g, x1gl, x2gl, x4gl
     use mphys_switches, only: set_mphys_switches,            &
         max_step_length, max_sed_length,                     &
@@ -337,7 +355,8 @@ contains
                                  i_cld_bimodal, rhcpt_off, acf_off, real_shear, rhcpt_tke_based,   &
          pc2eros_exp_rh,pc2eros_hybrid_sidesonly,                          &
          original_but_wrong, acf_cusack, cbl_and_cu, pc2init_smith,        &
-         pc2init_logic_original, pc2init_bimodal, i_pc2_homog_g_cf
+         pc2init_logic_original, pc2init_bimodal, i_pc2_homog_g_cf,        &
+         forced_cu_cca, i_pc2_homog_g_width, pc2init_logic_smooth
     use rad_input_mod, only: two_d_fsd_factor
     use science_fixes_mod, only:  i_fix_mphys_drop_settle, second_fix,      &
                                   l_pc2_homog_turb_q_neg, l_fix_ccb_cct, l_fix_conv_precip_evap,     &
@@ -366,7 +385,7 @@ contains
 
     implicit none
 
-    integer(i_def) :: k, n, n_pft
+    integer(i_def) :: n, n_pft
     logical(l_def) :: l_fix_nacl_density
     logical(l_def) :: l_fix_ukca_hygroscopicities
     logical(l_def) :: l_dust_ageing_on
@@ -547,7 +566,12 @@ contains
           keep_ri_fa = except_disc_inv
       end select
 
-      kprof_cu = buoy_integ
+      select case(kprof_cu_in)
+        case(kprof_cu_buoy_integ)
+          kprof_cu = buoy_integ
+        case(kprof_cu_buoy_integ_low)
+          kprof_cu = buoy_integ_low
+      end select
       l_noice_in_turb = noice_in_turb
       l_new_kcloudtop   = new_kcloudtop
       l_reset_dec_thres = .true.
@@ -635,6 +659,26 @@ contains
 
       ! Options which are bespoke to the choice of scheme
       select case (cv_scheme)
+
+      case(cv_scheme_comorph)
+
+        i_convection_vn = i_cv_comorph
+
+        ! conv_diag options which are different when using Comorph
+        cape_bottom          = imdi
+        cape_top             = imdi
+        cldbase_opt_dp       = rmdi
+        cldbase_opt_sh       = rmdi
+        ent_fac_dp           = rmdi
+        iconv_congestus      = imdi
+        iconv_deep           = imdi
+        w_cape_limit         = rmdi
+        l_reset_neg_delthvu  = .false.
+
+        ! 6a conv options used in Comorph kernel
+        l_mom       = .true.
+        l_ccrad     = .true.
+        l_3d_cca    = .true.
 
       case(cv_scheme_gregory_rowntree)
 
@@ -724,12 +768,6 @@ contains
         c_mass_sh           = 0.03_r_um
         orig_mdet_fac       = 1.0_r_um
 
-        ! Derived switches and parameters are set here based on the options
-        ! above
-        call cv_set_dependent_switches( )
-        ! Flags for diagnostic output are set here
-        call set_convection_output_flags( )
-
       case(cv_scheme_lambert_lewis)
         i_convection_vn   = i_cv_llcs
         non_local_bl      = off
@@ -757,6 +795,11 @@ contains
       i_convection_vn = i_convection_vn_6a
     end if
 
+    ! Derived switches and parameters are set here based on the options
+    ! above
+    call cv_set_dependent_switches( )
+    ! Flags for diagnostic output are set here
+    call set_convection_output_flags( )
     ! Check the contents of the convection parameters module
     call check_run_convection()
 
@@ -831,15 +874,27 @@ contains
         i_cld_vn                     = i_cld_pc2
         allicetdegc                  = -20.0_r_um
         dbsdtbs_turb_0               = 1.50e-4_r_um
-        forced_cu                    = cbl_and_cu
+        if (cv_scheme == cv_scheme_comorph) then
+          forced_cu = forced_cu_cca
+          i_pc2_homog_g_method = i_pc2_homog_g_width
+          l_pc2_homog_conv_pressure = .true.
+        else
+          forced_cu = cbl_and_cu
+          i_pc2_homog_g_method = i_pc2_homog_g_cf
+          l_pc2_homog_conv_pressure = .false.
+        end if
         forced_cu_fac                = 0.5_r_um
         i_cld_area                   = acf_off
         i_pc2_checks_cld_frac_method = 2
         i_pc2_conv_coupling          = 3
         i_pc2_erosion_method         = pc2eros_hybrid_sidesonly
-        i_pc2_homog_g_method         = i_pc2_homog_g_cf
         l_ensure_min_in_cloud_qcf    = .false.
-        i_pc2_init_logic             = pc2init_logic_original
+        select case(pc2_init_logic)
+          case(pc2_init_logic_original)
+            i_pc2_init_logic = pc2init_logic_original
+          case(pc2_init_logic_smooth)
+            i_pc2_init_logic = pc2init_logic_smooth
+        end select
         starticetkelvin              = 263.15_r_um
         if (pc2ini == pc2ini_smith)   i_pc2_init_method = pc2init_smith
         if (pc2ini == pc2ini_bimodal) i_pc2_init_method = pc2init_bimodal
@@ -949,20 +1004,26 @@ contains
         l_ukca_aie2 = .true.
         l_glomap_clim_aie2 = .true.
 
+        ! Enforce this on with Comorph
+        if (cv_scheme == cv_scheme_comorph) then
+          l_mcr_precfrac = .true.
+        end if
+
         select case (graupel_scheme)
         case (graupel_scheme_none)
           graupel_option = no_graupel
         case (graupel_scheme_modified)
           graupel_option = gr_srcols
           nummr_to_transport = 5_i_def
+          l_subgrid_graupel_frac = l_mcr_precfrac
         end select
 
         a_ratio_exp    = real(a_ratio_exp_in, r_um)
         a_ratio_fac    = real(a_ratio_fac_in, r_um)
         ar             = 1.00_r_um
-        c_r_correl     = 0.9_r_um
-        ci_input       = 14.3_r_um
-        cic_input      = 1024.0_r_um
+        c_r_correl     = real(c_r_correl_in, r_um)
+        ci_input       = real(ci_input_in, r_um)
+        cic_input      = real(cic_input_in, r_um)
         di_input       = 0.416_r_um
         dic_input      = 1.0_r_um
         i_mcr_iter     = i_mcr_iter_tstep
@@ -1165,6 +1226,18 @@ contains
         f_cons(1)      =  0.016_r_um
         f_cons(2)      =  2.76_r_um
         f_cons(3)      = -0.09_r_um
+
+        ! Parameters used in the convective inhomogeneity parametrization
+        if (cv_scheme == cv_scheme_comorph) then
+          fsd_min_conv_frac = 0.02_r_def
+          fsd_conv_const    = 3.0_r_def
+          fsd_nonconv_const = 0.8_r_def
+        else
+          fsd_min_conv_frac = 0.0_r_def
+          fsd_conv_const    = 2.81_r_def
+          fsd_nonconv_const = 1.14_r_def
+        end if
+
       end if
 
     end if

@@ -14,7 +14,8 @@ module slow_physics_alg_mod
   use cloud_config_mod,          only: scheme, scheme_pc2, scheme_bimodal, &
                                        pc2ini, pc2ini_bimodal,cld_fsd_hill
   use convection_config_mod,     only: cv_scheme, cv_scheme_lambert_lewis, &
-                                       cv_scheme_gregory_rowntree
+                                       cv_scheme_gregory_rowntree, &
+                                       cv_scheme_comorph
   use constants_mod,             only: i_def, r_def, l_def
   use log_mod,                   only: LOG_LEVEL_INFO
   use lfric_xios_write_mod,      only: write_field_generic
@@ -297,6 +298,9 @@ contains
     type( field_type ), pointer :: liquid_fraction => null()
     type( field_type ), pointer :: frozen_fraction => null()
     type( field_type ), pointer :: bulk_fraction   => null()
+    type( field_type ), pointer :: cf_liq_n
+    type( field_type ), pointer :: cf_fro_n
+    type( field_type ), pointer :: cf_bulk_n
 
     integer( kind=i_def ) :: i_mr
 
@@ -338,6 +342,19 @@ contains
     call derived_fields%get_field('exner_in_wth', exner_in_wth)
     call derived_fields%get_field('exner_wth_n', exner_wth_n)
     call invoke( setval_X(exner_wth_n,exner_in_wth) )
+
+    ! Save time n cloud fractions for Comorph
+    if (cv_scheme == cv_scheme_comorph) then
+      call cloud_fields%get_field('liquid_fraction', liquid_fraction)
+      call cloud_fields%get_field('frozen_fraction', frozen_fraction)
+      call cloud_fields%get_field('bulk_fraction', bulk_fraction)
+      call cloud_fields%get_field('cf_liq_n', cf_liq_n)
+      call cloud_fields%get_field('cf_fro_n', cf_fro_n)
+      call cloud_fields%get_field('cf_bulk_n', cf_bulk_n)
+      call invoke(setval_X(cf_liq_n, liquid_fraction), &
+                  setval_X(cf_fro_n, frozen_fraction), &
+                  setval_X(cf_bulk_n, bulk_fraction) )
+    end if
 
     theta_forcing_done   = .false.
     energy_correction_done = .false.

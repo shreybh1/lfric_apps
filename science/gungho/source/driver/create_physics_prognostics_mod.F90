@@ -63,6 +63,7 @@ module create_physics_prognostics_mod
                                              convection, convection_um
   use cloud_config_mod,               only : scheme,                            &
                                              scheme_pc2
+  use convection_config_mod,          only : cv_scheme, cv_scheme_comorph
   use microphysics_config_mod,        only : microphysics_casim
   use multires_coupling_config_mod,   only : coarse_rad_aerosol
 
@@ -103,8 +104,9 @@ module create_physics_prognostics_mod
                                              l_conv_prog_dq,                    &
                                              adv_conv_prog_dtheta,              &
                                              adv_conv_prog_dq
-  use mphys_inputs_mod, only: casim_iopt_act
-
+  use mphys_inputs_mod, only: casim_iopt_act, l_mcr_precfrac
+  use bl_option_mod, only: l_calc_tau_at_p
+  use cloud_inputs_mod, only: l_pc2_homog_conv_pressure
   use io_config_mod,                  only : checkpoint_read
   use initialization_config_mod,      only : init_option,                       &
                                              init_option_checkpoint_dump
@@ -444,6 +446,9 @@ contains
     !========================================================================
 
     ! 3D fields, need checkpointing
+    call processor%apply(make_spec('precfrac', main%microphysics,              &
+        adv_coll=if_adv(l_mcr_precfrac, adv%all_adv), ckp=l_mcr_precfrac,      &
+        empty = (.not. l_mcr_precfrac) ))
 
     ! Fields for CASIM (Cloud-AeroSol Interacting Microphysics)
     checkpoint_flag = microphysics_casim
@@ -566,6 +571,7 @@ contains
     call processor%apply(make_spec('lmix_bl', main%turbulence, Wtheta))
     call processor%apply(make_spec('dsldzm', main%turbulence, Wtheta))
     call processor%apply(make_spec('tke_bl', main%turbulence, Wtheta))
+    call processor%apply(make_spec('rhokm_bl', main%turbulence, Wtheta))
     call processor%apply(make_spec('dtrdz_tq_bl', main%turbulence, Wtheta))
     call processor%apply(make_spec('dw_bl', main%turbulence, Wtheta))
     call processor%apply(make_spec('thetal_inc_leonard', main%turbulence, Wtheta))
@@ -575,6 +581,10 @@ contains
     call processor%apply(make_spec('moist_flux_bl', main%turbulence, W3))
     call processor%apply(make_spec('heat_flux_bl', main%turbulence, W3))
     call processor%apply(make_spec('rhokh_bl', main%turbulence, W3))
+    call processor%apply(make_spec('taux', main%turbulence, W3, &
+                         empty=(.not. l_calc_tau_at_p) ))
+    call processor%apply(make_spec('tauy', main%turbulence, W3, &
+                         empty=(.not. l_calc_tau_at_p) ))
 
     ! W2 fields, don't need checkpointing
     call processor%apply(make_spec('rhokm_w2', main%turbulence, W2))
@@ -661,20 +671,23 @@ contains
     call processor%apply(make_spec('massflux_down', main%convection, Wtheta))
     call processor%apply(make_spec('conv_rain_3d', main%convection, Wtheta))
     call processor%apply(make_spec('conv_snow_3d', main%convection, Wtheta))
+    call processor%apply(make_spec('pressure_inc_env', main%convection, &
+                         Wtheta, empty=(.not. l_pc2_homog_conv_pressure) ))
 
     ! 3D fields on W3 (rho) levels
     call processor%apply(make_spec('du_conv', main%convection, W3))
     call processor%apply(make_spec('dv_conv', main%convection, W3))
 
-    call processor%apply(make_spec('conv_prog_dtheta', main%convection,         &
-        adv_coll=if_adv((l_conv_prog_dtheta .and. adv_conv_prog_dtheta),        &
-        adv%all_adv), ckp=l_conv_prog_dtheta))
-    call processor%apply(make_spec('conv_prog_dmv', main%convection,            &
-        adv_coll=if_adv((l_conv_prog_dq .and. adv_conv_prog_dq), adv%all_adv),  &
-        ckp=l_conv_prog_dq))
+    call processor%apply(make_spec('conv_prog_dtheta', main%convection,        &
+        adv_coll=if_adv((l_conv_prog_dtheta .and. adv_conv_prog_dtheta),       &
+        adv%all_adv), ckp=l_conv_prog_dtheta, empty=(.not. l_conv_prog_dtheta)))
+    call processor%apply(make_spec('conv_prog_dmv', main%convection,           &
+        adv_coll=if_adv((l_conv_prog_dq .and. adv_conv_prog_dq), adv%all_adv), &
+        ckp=l_conv_prog_dq, empty=(.not. l_conv_prog_dq)))
 
-    call processor%apply(make_spec('conv_prog_precip', main%convection,         &
-        adv_coll=if_adv(l_conv_prog_precip, adv%all_adv), ckp=l_conv_prog_precip))
+    call processor%apply(make_spec('conv_prog_precip', main%convection,        &
+        adv_coll=if_adv(l_conv_prog_precip, adv%all_adv),                      &
+        ckp=l_conv_prog_precip, empty=(.not. l_conv_prog_precip)))
 
     !========================================================================
     ! Fields owned by the cloud scheme
@@ -715,6 +728,14 @@ contains
     call processor%apply(make_spec('sskew_bm', main%cloud, Wtheta))
     call processor%apply(make_spec('svar_bm', main%cloud, Wtheta))
     call processor%apply(make_spec('svar_tb', main%cloud, Wtheta))
+
+    is_empty = (cv_scheme /= cv_scheme_comorph)
+    call processor%apply(make_spec('cf_liq_n', main%cloud, Wtheta, &
+         empty = is_empty))
+    call processor%apply(make_spec('cf_fro_n', main%cloud, Wtheta, &
+         empty = is_empty))
+    call processor%apply(make_spec('cf_bulk_n', main%cloud, Wtheta, &
+         empty = is_empty))
 
     !========================================================================
     ! Fields owned by the surface exchange scheme
@@ -859,6 +880,8 @@ contains
     ! vector_space => function_space_collection%get_fs(twod_mesh, 0, W2,
     !     get_ndata_val('surface_regrid_vars'))
     call processor%apply(make_spec('surf_interp_w2', main%surface, W2,          &
+        mult='surface_regrid_vars', twod=.true.))
+    call processor%apply(make_spec('surf_interp', main%surface, W3,            &
         mult='surface_regrid_vars', twod=.true.))
 
     ! 2D fields at W2 points

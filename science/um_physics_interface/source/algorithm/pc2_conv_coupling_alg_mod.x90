@@ -66,6 +66,7 @@ contains
     type( field_type ), pointer :: dcfl_conv       => null()
     type( field_type ), pointer :: dcff_conv       => null()
     type( field_type ), pointer :: dbcf_conv       => null()
+    type( field_type ), pointer :: pressure_inc_env
 
     type(mesh_type), pointer :: mesh => null()
     integer(i_def) :: ncells
@@ -86,6 +87,7 @@ contains
     call convection_fields%get_field('dcfl_conv', dcfl_conv)
     call convection_fields%get_field('dcff_conv', dcff_conv)
     call convection_fields%get_field('dbcf_conv', dbcf_conv)
+    call convection_fields%get_field('pressure_inc_env', pressure_inc_env)
 
     ! Re-initialise UM to work on whole domain (i-first)
     mesh => exner_wth%get_mesh()
@@ -101,6 +103,7 @@ contains
                                                   frozen_fraction, &
                                                   bulk_fraction,   &
                                                   exner_wth,       &
+                                                  pressure_inc_env,&
                                                   dt_conv,         &
                                                   dmv_conv,        &
                                                   dmcl_conv,       &

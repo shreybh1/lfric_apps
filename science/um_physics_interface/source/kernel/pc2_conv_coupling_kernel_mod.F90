@@ -25,7 +25,7 @@ private
 
 type, public, extends(kernel_type) :: pc2_conv_coupling_kernel_type
   private
-  type(arg_type) :: meta_args(14) = (/                         &
+  type(arg_type) :: meta_args(15) = (/                         &
        arg_type(GH_FIELD,  GH_REAL, GH_READ,      WTHETA),      & ! theta_wth
        arg_type(GH_FIELD,  GH_REAL, GH_READ,      WTHETA),      & ! mv_wth
        arg_type(GH_FIELD,  GH_REAL, GH_READ,      WTHETA),      & ! ml_wth
@@ -33,6 +33,7 @@ type, public, extends(kernel_type) :: pc2_conv_coupling_kernel_type
        arg_type(GH_FIELD,  GH_REAL, GH_READ,      WTHETA),      & ! cff_wth
        arg_type(GH_FIELD,  GH_REAL, GH_READ,      WTHETA),      & ! bcf_wth
        arg_type(GH_FIELD,  GH_REAL, GH_READ,      WTHETA),      & ! exner_wth
+       arg_type(GH_FIELD,  GH_REAL, GH_READ,      WTHETA),      & ! pressure_inc_env
        arg_type(GH_FIELD,  GH_REAL, GH_READWRITE, WTHETA),      & ! dt_conv_wth
        arg_type(GH_FIELD,  GH_REAL, GH_READWRITE, WTHETA),      & ! dmv_conv_wth
        arg_type(GH_FIELD,  GH_REAL, GH_READWRITE, WTHETA),      & ! dmcl_conv_wth
@@ -65,6 +66,7 @@ contains
 !> @param[in]     cff_wth       Ice cloud fraction
 !> @param[in]     bcf_wth       Bulk cloud fraction
 !> @param[in]     exner_wth     Exner pressure in theta space
+!> @param[in]     pressure_inc_env Environmental pressure inc from convection
 !> @param[in,out] dt_conv_wth   Increment to theta in theta space
 !> @param[in,out] dmv_conv_wth  Increment to vapour from convection in theta space
 !> @param[in,out] dmcl_conv_wth Increment to liquid water content from convection in theta space
@@ -85,6 +87,7 @@ subroutine pc2_conv_coupling_code( nlayers, seg_len,                           &
                                    cff_wth,                                    &
                                    bcf_wth,                                    &
                                    exner_wth,                                  &
+                                   pressure_inc_env,                           &
                                    ! Forcings in and combined responses out
                                    dt_conv_wth,                                &
                                    dmv_conv_wth,                               &
@@ -103,7 +106,7 @@ subroutine pc2_conv_coupling_code( nlayers, seg_len,                           &
 
     use nlsizes_namelist_mod,       only: model_levels
     use pc2_hom_conv_mod,           only: pc2_hom_conv
-    use cloud_inputs_mod,           only: dbsdtbs_turb_0
+    use cloud_inputs_mod,           only: dbsdtbs_turb_0, l_pc2_homog_conv_pressure
     use planet_constants_mod,       only: p_zero, kappa
 
     implicit none
@@ -122,6 +125,7 @@ subroutine pc2_conv_coupling_code( nlayers, seg_len,                           &
     real(kind=r_def), intent(in),    dimension(undf_wth) :: cff_wth
     real(kind=r_def), intent(in),    dimension(undf_wth) :: bcf_wth
     real(kind=r_def), intent(in),    dimension(undf_wth) :: exner_wth
+    real(kind=r_def), intent(in),    dimension(undf_wth) :: pressure_inc_env
 
     ! The forcings (in) and the updated increments (out) as a result
     real(kind=r_def), intent(inout), dimension(undf_wth) :: dt_conv_wth
@@ -136,12 +140,12 @@ subroutine pc2_conv_coupling_code( nlayers, seg_len,                           &
 
     ! Local variables
     real(r_um), dimension(seg_len,1) ::                                        &
-                p_theta_levels,                                                &
+                p_work,                                                        &
                 ! Work arrays
                 qv_work,  qcl_work,                                            &
                 bcf_work, cfl_work, cff_work, t_work,                          &
                 ! Forcings
-                t_forcing, qv_forcing, cfl_forcing,                            &
+                t_forcing, qv_forcing, cfl_forcing, p_forcing,                 &
                 ! Increments
                 qv_incr,  qcl_incr,                                            &
                 bcf_incr, cfl_incr, t_incr,                                    &
@@ -155,39 +159,86 @@ subroutine pc2_conv_coupling_code( nlayers, seg_len,                           &
     zeros=0.0_r_um
 
     j = 1
-    do k = 1, model_levels
-      do i = 1, seg_len
+    do k = 1, model_levels-1
 
-        ! Pressure at centre of theta levels
-        p_theta_levels(i,j) = p_zero*(exner_wth(map_wth(1,i) + k))             &
-                                      **(1.0_r_def/kappa)
-        ! Temperature
-        t_work(i,j)    = theta_wth(map_wth(1,i) + k) *                         &
-                         exner_wth(map_wth(1,i) + k)
+      if (l_pc2_homog_conv_pressure) then
 
-        ! Moist prognostics
-        qv_work(i,j)    = mv_wth(map_wth(1,i) + k)
-        qcl_work(i,j)   = ml_wth(map_wth(1,i) + k) + dmcl_conv_wth(map_wth(1,i) + k)
+        do i = 1, seg_len
+          ! Pressure forcing - change in pressure from departure point
+          p_forcing(i,j)  = pressure_inc_env(map_wth(1,i) + k)
+          ! Pressure at departure point
+          p_work(i,j) = p_zero*(exner_wth(map_wth(1,i) + k))                   &
+                                        **(1.0_r_def/kappa) - p_forcing(i,j)
 
-        ! Cloud fractions
-        cfl_work(i,j)   = cfl_wth(map_wth(1,i) + k) + dcfl_conv_wth(map_wth(1,i) + k)
-        cff_work(i,j)   = cff_wth(map_wth(1,i) + k) + dcff_conv_wth(map_wth(1,i) + k)
-        bcf_work(i,j)   = bcf_wth(map_wth(1,i) + k) + dbcf_conv_wth(map_wth(1,i) + k)
+          ! Temperature forcing = theta after conv * exner (arrival - depart)
+          t_forcing(i,j) = ( theta_wth(map_wth(1,i) + k) +                     &
+                             dt_conv_wth(map_wth(1,i) + k) /                   &
+                             exner_wth(map_wth(1,i) + k) ) *                   &
+                           ( exner_wth(map_wth(1,i) + k) -                     &
+                             (p_work(i,j)/p_zero)**kappa )
+          ! Temperature at departure point
+          t_work(i,j) = theta_wth(map_wth(1,i) + k) *                          &
+                        exner_wth(map_wth(1,i) + k) +                          &
+                        dt_conv_wth(map_wth(1,i) + k) - t_forcing(i,j)
 
-        ! Forcings
-        t_forcing(i,j)  = dt_conv_wth(map_wth(1,i) + k)
-        qv_forcing(i,j) = dmv_conv_wth(map_wth(1,i) + k)
-        cfl_forcing(i,j)= dcfl_conv_wth(map_wth(1,i) + k)
+          ! No forcing of vapour or cloud
+          qv_forcing(i,j) = 0.0_r_um
+          cfl_forcing(i,j)= 0.0_r_um
 
-        ! Increments
-        t_incr(i,j)     = 0.0_r_um
-        qv_incr(i,j)    = 0.0_r_um
-        qcl_incr(i,j)   = 0.0_r_um
-        cfl_incr(i,j)   = 0.0_r_um
-        bcf_incr(i,j)   = 0.0_r_um
-      end do
+          ! Vapour after convection
+          qv_work(i,j)    = mv_wth(map_wth(1,i) + k) + dmv_conv_wth(map_wth(1,i) + k)
 
-      call pc2_hom_conv( p_theta_levels,   & ! Pressure
+          ! Cloud condensate and fraction after convection
+          qcl_work(i,j)   = ml_wth(map_wth(1,i) + k) + dmcl_conv_wth(map_wth(1,i) + k)
+          cfl_work(i,j)   = cfl_wth(map_wth(1,i) + k) + dcfl_conv_wth(map_wth(1,i) + k)
+          cff_work(i,j)   = cff_wth(map_wth(1,i) + k) + dcff_conv_wth(map_wth(1,i) + k)
+          bcf_work(i,j)   = bcf_wth(map_wth(1,i) + k) + dbcf_conv_wth(map_wth(1,i) + k)
+
+          ! Output Increments from PC2
+          t_incr(i,j)     = 0.0_r_um
+          qv_incr(i,j)    = 0.0_r_um
+          qcl_incr(i,j)   = 0.0_r_um
+          cfl_incr(i,j)   = 0.0_r_um
+          bcf_incr(i,j)   = 0.0_r_um
+        end do
+
+      else
+
+        do i = 1, seg_len
+          ! Pressure at centre of theta levels
+          p_work(i,j) = p_zero*(exner_wth(map_wth(1,i) + k))                   &
+                                        **(1.0_r_def/kappa)
+
+          ! Temperature before convection
+          t_work(i,j)    = theta_wth(map_wth(1,i) + k) *                       &
+                           exner_wth(map_wth(1,i) + k)
+
+          ! Vapour before convection
+          qv_work(i,j)    = mv_wth(map_wth(1,i) + k)
+
+          ! Cloud condensate and fraction after convection
+          qcl_work(i,j)   = ml_wth(map_wth(1,i) + k) + dmcl_conv_wth(map_wth(1,i) + k)
+          cfl_work(i,j)   = cfl_wth(map_wth(1,i) + k) + dcfl_conv_wth(map_wth(1,i) + k)
+          cff_work(i,j)   = cff_wth(map_wth(1,i) + k) + dcff_conv_wth(map_wth(1,i) + k)
+          bcf_work(i,j)   = bcf_wth(map_wth(1,i) + k) + dbcf_conv_wth(map_wth(1,i) + k)
+
+          ! Forcings - convection increments except qcl
+          t_forcing(i,j)  = dt_conv_wth(map_wth(1,i) + k)
+          qv_forcing(i,j) = dmv_conv_wth(map_wth(1,i) + k)
+          cfl_forcing(i,j)= dcfl_conv_wth(map_wth(1,i) + k)
+          p_forcing(i,j)  = 0.0_r_um
+
+          ! Output Increments from PC2
+          t_incr(i,j)     = 0.0_r_um
+          qv_incr(i,j)    = 0.0_r_um
+          qcl_incr(i,j)   = 0.0_r_um
+          cfl_incr(i,j)   = 0.0_r_um
+          bcf_incr(i,j)   = 0.0_r_um
+        end do
+
+      end if
+
+      call pc2_hom_conv(p_work,           & ! Pressure
                         dt,               & ! Model timestep in seconds
                         ! Variables
                         t_work,           & ! Temperature
@@ -200,7 +251,7 @@ subroutine pc2_conv_coupling_code( nlayers, seg_len,                           &
                         t_forcing,        & ! Forcing of temperature
                         qv_forcing,       & ! Forcing of water vapour
                         zeros,            & ! Dummy dqclin forcing LWC
-                        zeros,            & ! Dummy dpdt   forcing pressure
+                        p_forcing,        & ! dpdt   forcing pressure
                         cfl_forcing,      & ! dcflin forcing lid cloud frac
                         zeros,            & ! Dummy dqcl_mp
                         ! Output variables

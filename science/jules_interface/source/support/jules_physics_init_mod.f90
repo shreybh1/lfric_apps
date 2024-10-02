@@ -95,7 +95,9 @@ module jules_physics_init_mod
                                      l_vg_bc_switch => l_vg_soil,              &
                                      use_variable_sst, heat_cap_sea,           &
                                      evap_scale_sea, buddy_sea_in => buddy_sea,&
-                                     buddy_sea_on, knl_in => knl
+                                     buddy_sea_on, knl_in => knl,              &
+                                     catch0_in => catch0,                      &
+                                     dcatch_dlai_in => dcatch_dlai
 
   ! UM modules used
   use jules_surface_types_mod, only : npft, nnvg, ntype, ncpft, nnpft
@@ -642,8 +644,8 @@ contains
     b_wl=(/ 1.667_r_um, 1.667_r_um, 1.667_r_um, 1.667_r_um, 1.667_r_um /)
     c3=(/ 1,1,1,0,1 /)
     can_struct_a=(/ 1.0_r_um, 1.0_r_um, 1.0_r_um, 1.0_r_um, 1.0_r_um /)
-    catch0=(/ 0.5_r_um, 0.5_r_um, 0.5_r_um, 0.5_r_um, 0.5_r_um /)
-    dcatch_dlai=(/ 0.05_r_um, 0.05_r_um, 0.05_r_um, 0.05_r_um, 0.05_r_um /)
+    catch0 = real(catch0_in, r_um)
+    dcatch_dlai = real(dcatch_dlai_in, r_um)
     dgl_dm=(/ 0.0_r_um, 0.0_r_um, 0.0_r_um, 0.0_r_um, 0.0_r_um /)
     dgl_dt=(/ 9.0_r_um, 9.0_r_um, 0.0_r_um, 0.0_r_um, 9.0_r_um /)
     dqcrit=(/ 0.090_r_um, 0.060_r_um, 0.100_r_um, 0.075_r_um, 0.100_r_um /)

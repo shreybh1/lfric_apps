@@ -17,6 +17,7 @@ use kernel_mod,           only: kernel_type
 use cloud_config_mod,     only: use_fsd_eff_res
 use planet_config_mod,    only: radius
 use fsd_parameters_mod,   only: fsd_eff_lam, f_cons
+use um_physics_init_mod,  only: fsd_min_conv_frac, fsd_conv_const, fsd_nonconv_const
 
 implicit none
 
@@ -129,11 +130,11 @@ subroutine fsd_condensate_code( nlayers,                    &
     ! Equations taken from Hill et al (2015, DOI: 10.1002/qj.2506)
     do k = 1, nlayers
 
-      if (cca_wth(map_wth(1) + k) > 0.0_r_def) then
-        conv_thick_part = 2.81_r_def * (x_in_km(k)**(-0.12_r_def))             &
+      if (cca_wth(map_wth(1) + k) > fsd_min_conv_frac) then
+        conv_thick_part = fsd_conv_const * (x_in_km(k)**(-0.12_r_def))         &
                         * ( dz_wth(map_wth(1)+k) * m_to_km ) ** 0.07_r_def
       else
-        conv_thick_part = 1.14_r_def * (x_in_km(k)**0.002_r_def)               &
+        conv_thick_part = fsd_nonconv_const * (x_in_km(k)**0.002_r_def)        &
                         * ( dz_wth(map_wth(1)+k) * m_to_km ) ** 0.12_r_def
       end if
 

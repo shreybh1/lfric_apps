@@ -231,6 +231,9 @@
   <field id="cloud__bulk_fraction" name="bulk_fraction" long_name="bulk_cloud_fraction" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__liquid_fraction" name="liquid_fraction" long_name="liquid_cloud_fraction" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__frozen_fraction" name="frozen_fraction" long_name="frozen_cloud_fraction" unit="1" grid_ref="full_level_face_grid" />
+  <field id="cloud__cf_liq_n" name="bulk_fraction_n" long_name="bulk_cloud_fraction_at_start_of_timestep" unit="1" grid_ref="full_level_face_grid" />
+  <field id="cloud__cf_fro_n" name="liquid_fraction_n" long_name="liquid_cloud_fraction_at_start_of_timestep" unit="1" grid_ref="full_level_face_grid" />
+  <field id="cloud__cf_bulk_n" name="frozen_fraction_n" long_name="frozen_cloud_fraction_at_start_of_timestep" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__rh_crit" name="rh_crit" long_name="critical_relative_humidity" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__departure_exner_wth" name="departure_exner_wth" long_name="exner_at_departure_point" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__tau_dec_bm" name="tau_dec_bm" long_name="decorrelation_time_scale" unit="s" grid_ref="full_level_face_grid" />
@@ -243,34 +246,46 @@
   <field id="cloud__dtheta_pc2_rad" name="dtheta_pc2_rad" long_name="tendency_of_air_potential_temperature_due_to_pc2_response_to_radiative_heating" unit="K" grid_ref="full_level_face_grid" />
   <field id="cloud__dtheta_pc2_checks" name="dtheta_pc2_checks" long_name="tendency_of_air_potential_temperature_due_to_pc2_checks" unit="K" grid_ref="full_level_face_grid" />
   <field id="cloud__dtheta_pc2_pressure_change" name="dtheta_pc2_pressure_change" long_name="tendency_of_air_potential_temperature_due_to_pc2_pressure_change" unit="K" grid_ref="full_level_face_grid" />
+  <field id="cloud__dtheta_pc2_pressure_change_b4_conv" name="dtheta_pc2_pressure_change_b4_conv" long_name="tendency_of_air_potential_temperature_due_to_pc2_pressure_change_b4_conv" unit="K" grid_ref="full_level_face_grid" />
   <field id="cloud__dtheta_pc2_conv_coupling" name="dtheta_pc2_conv_coupling" long_name="tendency_of_air_potential_temperature_due_to_pc2_conv_coupling" unit="K" grid_ref="full_level_face_grid" />
   <field id="cloud__dtheta_pc2_initiation" name="dtheta_pc2_initiation" long_name="tendency_of_air_potential_temperature_due_to_pc2_initiation" unit="K" grid_ref="full_level_face_grid" />
+  <field id="cloud__dtheta_pc2_initiation_b4_conv" name="dtheta_pc2_initiation_b4_conv" long_name="tendency_of_air_potential_temperature_due_to_pc2_initiation_b4_conv" unit="K" grid_ref="full_level_face_grid" />
   <field id="cloud__dmv_pc2_rad" name="dmv_pc2_rad" long_name="tendency_of_atmosphere_water_vapor_content_due_to_pc2_response_to_radiative_heating" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmv_pc2_checks" name="dmv_pc2_checks" long_name="tendency_of_atmosphere_water_vapor_content_due_to_pc2_checks" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmv_pc2_pressure_change" name="dmv_pc2_pressure_change" long_name="tendency_of_atmosphere_water_vapor_content_due_to_pc2_pressure_change" unit="kg kg-1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dmv_pc2_pressure_change_b4_conv" name="dmv_pc2_pressure_change_b4_conv" long_name="tendency_of_atmosphere_water_vapor_content_due_to_pc2_pressure_change_b4_conv" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmv_pc2_conv_coupling" name="dmv_pc2_conv_coupling" long_name="tendency_of_atmosphere_water_vapor_content_due_to_pc2_conv_coupling" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmv_pc2_initiation" name="dmv_pc2_initiation" long_name="tendency_of_atmosphere_water_vapor_content_due_to_pc2_initiation" unit="kg kg-1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dmv_pc2_initiation_b4_conv" name="dmv_pc2_initiation_b4_conv" long_name="tendency_of_atmosphere_water_vapor_content_due_to_pc2_initiation_b4_conv" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmcl_pc2_rad" name="dmcl_pc2_rad" long_name="tendency_of_atmosphere_cloud_liquid_water_content_due_to_pc2_response_to_radiative_heating" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmcl_pc2_checks" name="dmcl_pc2_checks" long_name="tendency_of_atmosphere_cloud_liquid_water_content_due_to_pc2_checks" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmcl_pc2_pressure_change" name="dmcl_pc2_pressure_change" long_name="tendency_of_atmosphere_cloud_liquid_water_content_due_to_pc2_pressure_change" unit="kg kg-1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dmcl_pc2_pressure_change_b4_conv" name="dmcl_pc2_pressure_change_b4_conv" long_name="tendency_of_atmosphere_cloud_liquid_water_content_due_to_pc2_pressure_change_b4_conv" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmcl_pc2_conv_coupling" name="dmcl_pc2_conv_coupling" long_name="tendency_of_atmosphere_cloud_liquid_water_content_due_to_pc2_conv_coupling" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmcl_pc2_initiation" name="dmcl_pc2_initiation" long_name="tendency_of_atmosphere_cloud_liquid_water_content_due_to_pc2_initiation" unit="kg kg-1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dmcl_pc2_initiation_b4_conv" name="dmcl_pc2_initiation_b4_conv" long_name="tendency_of_atmosphere_cloud_liquid_water_content_due_to_pc2_initiation_b4_conv" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmci_pc2_checks" name="dmci_pc2_checks" long_name="tendency_of_atmosphere_cloud_ice_water_content_due_to_pc2_checks" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmci_pc2_conv_coupling" name="dmci_pc2_conv_coupling" long_name="tendency_of_atmosphere_cloud_ice_water_content_due_to_pc2_conv_coupling" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dmci_pc2_initiation" name="dmci_pc2_initiation" long_name="tendency_of_atmosphere_cloud_ice_water_content_due_to_pc2_initiation" unit="kg kg-1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dmci_pc2_initiation_b4_conv" name="dmci_pc2_initiation_b4_conv" long_name="tendency_of_atmosphere_cloud_ice_water_content_due_to_pc2_initiation_b4_conv" unit="kg kg-1" grid_ref="full_level_face_grid" />
   <field id="cloud__dbcf_pc2_rad" name="dbcf_pc2_rad" long_name="tendency_of_cloud_amount_in_atmosphere_layer_due_to_pc2_response_to_radiative_heating" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dbcf_pc2_checks" name="dbcf_pc2_checks" long_name="tendency_of_cloud_amount_in_atmosphere_layer_due_to_pc2_checks" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dbcf_pc2_pressure_change" name="dbcf_pc2_pressure_change" long_name="tendency_of_cloud_amount_in_atmosphere_layer_due_to_pc2_pressure_change" unit="1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dbcf_pc2_pressure_change_b4_conv" name="dbcf_pc2_pressure_change_b4_conv" long_name="tendency_of_cloud_amount_in_atmosphere_layer_due_to_pc2_pressure_change_b4_conv" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dbcf_pc2_conv_coupling" name="dbcf_pc2_conv_coupling" long_name="tendency_of_cloud_amount_in_atmosphere_layer_due_to_pc2_conv_coupling" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dbcf_pc2_initiation" name="dbcf_pc2_initiation" long_name="tendency_of_cloud_amount_in_atmosphere_layer_due_to_pc2_initiation" unit="1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dbcf_pc2_initiation_b4_conv" name="dbcf_pc2_initiation_b4_conv" long_name="tendency_of_cloud_amount_in_atmosphere_layer_due_to_pc2_initiation_b4_conv" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dcfl_pc2_rad" name="dcfl_pc2_rad" long_name="tendency_of_liquid_cloud_amount_in_atmosphere_layer_due_to_pc2_response_to_radiative_heating" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dcfl_pc2_checks" name="dcfl_pc2_checks" long_name="tendency_of_liquid_cloud_amount_in_atmosphere_layer_due_to_pc2_checks" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dcfl_pc2_pressure_change" name="dcfl_pc2_pressure_change" long_name="tendency_of_liquid_cloud_amount_in_atmosphere_layer_due_to_pc2_pressure_change" unit="1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dcfl_pc2_pressure_change_b4_conv" name="dcfl_pc2_pressure_change_b4_conv" long_name="tendency_of_liquid_cloud_amount_in_atmosphere_layer_due_to_pc2_pressure_change_b4_conv" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dcfl_pc2_conv_coupling" name="dcfl_pc2_conv_coupling" long_name="tendency_of_liquid_cloud_amount_in_atmosphere_layer_due_to_pc2_conv_coupling" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dcfl_pc2_initiation" name="dcfl_pc2_initiation" long_name="tendency_of_liquid_cloud_amount_in_atmosphere_layer_due_to_pc2_initiation" unit="1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dcfl_pc2_initiation_b4_conv" name="dcfl_pc2_initiation_b4_conv" long_name="tendency_of_liquid_cloud_amount_in_atmosphere_layer_due_to_pc2_initiation_b4_conv" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dcff_pc2_checks" name="dcff_pc2_checks" long_name="tendency_of_frozen_cloud_amount_in_atmosphere_layer_due_to_pc2_checks" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dcff_pc2_conv_coupling" name="dcff_pc2_conv_coupling" long_name="tendency_of_frozen_cloud_amount_in_atmosphere_layer_due_to_pc2_conv_coupling" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__dcff_pc2_initiation" name="dcff_pc2_initiation" long_name="tendency_of_frozen_cloud_amount_in_atmosphere_layer_due_to_pc2_initiation" unit="1" grid_ref="full_level_face_grid" />
+  <field id="cloud__dcff_pc2_initiation_b4_conv" name="dcff_pc2_initiation_b4_conv" long_name="tendency_of_frozen_cloud_amount_in_atmosphere_layer_due_to_pc2_initiation_b4_conv" unit="1" grid_ref="full_level_face_grid" />
   <field id="cloud__cloud_amount_max" name="cloud_amount_max" long_name="combined_cloud_amount_maximum_overlap" standard_name="cloud_area_fraction" unit="1" domain_ref="face" />
   <field id="cloud__cloud_amount_rnd" name="cloud_amount_rnd" long_name="combined_cloud_amount_random_overlap" standard_name="cloud_area_fraction" unit="1" domain_ref="face" />
   <field id="cloud__cloud_amount_maxrnd" name="cloud_amount_maxrnd" long_name="combined_cloud_amount_maximum_random_overlap" standard_name="cloud_area_fraction" unit="1" domain_ref="face" />

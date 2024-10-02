@@ -26,6 +26,8 @@ contains
   !> @param[in,out] microphysics_fields Collection of fields for mphys scheme
   subroutine init_microphysics_fields_alg(microphysics_fields)
 
+    use mphys_inputs_mod, only: l_mcr_precfrac
+
     implicit none
     ! Arguments
     type(field_collection_type), intent(in) :: microphysics_fields
@@ -50,6 +52,7 @@ contains
     type( field_type ), pointer :: n_g          => null()
     type( field_type ), pointer :: tnuc         => null()
     type( field_type ), pointer :: tnuc_nlcl    => null()
+    type( field_type ), pointer :: precfrac
 
     call microphysics_fields%get_field('dtheta_mphys', dtheta_mphys)
     call microphysics_fields%get_field('dmv_mphys', dmv_mphys)
@@ -65,6 +68,7 @@ contains
     call microphysics_fields%get_field('rim_agg', rim_agg)
     call microphysics_fields%get_field('tnuc', tnuc)
     call microphysics_fields%get_field('tnuc_nlcl', tnuc_nlcl)
+    call microphysics_fields%get_field('precfrac', precfrac)
 
     call microphysics_fields%get_field('nl_mphys', n_cl)
     call microphysics_fields%get_field('nr_mphys', n_r)
@@ -91,7 +95,11 @@ contains
                  setval_c(rim_cry,      0.0_r_def), &
                  setval_c(rim_agg,      0.0_r_def), &
                  setval_c(tnuc,         0.0_r_def), &
-                 setval_c(tnuc_nlcl,    0.0_r_def) )
+                 setval_c(tnuc_nlcl,    0.0_r_def))
+
+    ! Initialise precipitation fraction to nonzero value - it will be set
+    ! correctly in first run through microphysics scheme
+    if (l_mcr_precfrac) call invoke(setval_c(precfrac, 0.5_r_def))
 
   end subroutine init_microphysics_fields_alg
 

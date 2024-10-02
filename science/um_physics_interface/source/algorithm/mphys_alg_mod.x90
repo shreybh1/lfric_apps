@@ -110,6 +110,7 @@ contains
     type( field_type ), pointer :: rim_cry             => null()
     type( field_type ), pointer :: rim_agg             => null()
     type( field_type ), pointer :: tnuc                => null()
+    type( field_type ), pointer :: precfrac
 
     type( field_type ), pointer :: cloud_drop_no_conc  => null()
     type( field_type ), pointer :: n_acc_ins           => null()
@@ -133,6 +134,8 @@ contains
 
     type( field_type ) :: refl_tot
     type( field_type ) :: refl_1km
+
+    type( field_type ) :: pressure_inc
 
     type(mesh_type), pointer :: mesh => null()
 
@@ -175,6 +178,7 @@ contains
     call microphysics_fields%get_field('rim_cry', rim_cry)
     call microphysics_fields%get_field('rim_agg', rim_agg)
     call microphysics_fields%get_field('tnuc', tnuc)
+    call microphysics_fields%get_field('precfrac', precfrac)
 
     call aerosol_fields%get_field('cloud_drop_no_conc', cloud_drop_no_conc)
     call aerosol_fields%get_field('n_acc_ins', n_acc_ins)
@@ -190,10 +194,12 @@ contains
                                     refl_tot, refl_1km)
 
     if (mphys_erosion) then
+      call exner_in_wth%copy_field_properties(pressure_inc)
       call invoke( pc2_conv_coupling_kernel_type(theta, mr_n(imr_v),           &
                                                  mr_n(imr_cl),                 &
                                                  cfl_in, cff_in, bcf_in,       &
-                                                 exner_in_wth, dtheta_mphys,   &
+                                                 exner_in_wth, pressure_inc,   &
+                                                 dtheta_mphys,                 &
                                                  dmr_mphys(imr_v),             &
                                                  dmr_mphys(imr_cl),            &
                                                  dcfl_mphys, dcff_mphys,       &
@@ -220,7 +226,7 @@ contains
                                      dmr_mphys(imr_v),  dmr_mphys(imr_cl),     &
                                      dmr_mphys(imr_ci), dmr_mphys(imr_r),      &
                                      dmr_mphys(imr_g), ls_rain, ls_snow,       &
-                                     ls_graup, lsca_2d,                        &
+                                     ls_graup, lsca_2d, precfrac,              &
                                      ls_rain_3d, ls_snow_3d,                   &
                                      autoconv, accretion,                      &
                                      rim_cry, rim_agg,                         &

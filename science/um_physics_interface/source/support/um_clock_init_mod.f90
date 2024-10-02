@@ -23,7 +23,7 @@ contains
   subroutine um_clock_init( clock )
 
     ! UM modules containing things that need setting
-    use timestep_mod, only: timestep
+    use timestep_mod, only: timestep, recip_timestep
 
     implicit none
 
@@ -32,6 +32,7 @@ contains
     ! Timestep used in UM code - contained in UM timestep_mod.
     ! Set from LFRic input timestep.
     timestep = real(clock%get_seconds_per_step(), r_um)
+    recip_timestep = 1.0_r_um / timestep
 
   end subroutine um_clock_init
 

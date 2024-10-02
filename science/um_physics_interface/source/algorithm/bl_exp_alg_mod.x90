@@ -22,9 +22,9 @@ module bl_exp_alg_mod
                                            get_rdz_fd1, get_dz_at_wtheta,     &
                                            get_rdz_w3, get_dtrdz_wth
   use map_fd_to_prognostics_alg_mod, only: set_wind
-  use jules_control_init_mod,        only: n_surf_interp
   use jules_surface_config_mod,      only: formdrag, formdrag_dist_drag
   use surface_config_mod,            only: buddy_sea, buddy_sea_on
+  use bl_option_mod,                 only: l_calc_tau_at_p
   use um_sizes_init_mod,             only: um_sizes_init
 
   use io_config_mod,        only: subroutine_timers
@@ -141,6 +141,9 @@ contains
     type( field_type ), pointer :: gradrinr        => null()
     type( field_type ), pointer :: rhokm_w2        => null()
     type( field_type ), pointer :: tau_w2          => null()
+    type( field_type ), pointer :: taux
+    type( field_type ), pointer :: tauy
+    type( field_type ), pointer :: rhokm_bl
     type( integer_field_type ), pointer :: level_ent => null()
     type( integer_field_type ), pointer :: level_ent_dsc => null()
     type( field_type ), pointer :: ent_we_lim      => null()
@@ -214,6 +217,7 @@ contains
     type( field_type ), pointer :: tile_water_extract  => null()
     type( field_type ), pointer :: net_prim_prod       => null()
     type( field_type ), pointer :: surf_interp_w2      => null()
+    type( field_type ), pointer :: surf_interp
     type( field_type ), pointer :: tau_land_w2         => null()
     type( field_type ), pointer :: tau_ssi_w2          => null()
     type( field_type ), pointer :: albedo_obs_scaling  => null()
@@ -272,11 +276,11 @@ contains
 
     ! local variables
     type(mesh_type),           pointer :: mesh => null()
-    type(function_space_type), pointer :: vector_space => null()
     type( field_type ) :: gross_prim_prod, dtl_mphys, dmt_mphys, ngstress_w2,  &
-         fd_tau_w2, rhokm_bl, ngstress_bl, fd_taux, fd_tauy, fd_tauz,          &
-         surf_interp, zht, z0h_eff, oblen, soil_respiration, rhostar,          &
+         fd_tau_w2, ngstress_bl, fd_taux, fd_tauy, fd_tauz,                    &
+         zht, z0h_eff, oblen, soil_respiration, rhostar,                       &
          recip_l_mo_sea, h_blend_orog, t1_sd_2d, q1_sd_2d
+    type( field_type) :: rdz_wth, taux_land, tauy_land, taux_ssi, tauy_ssi
 
     integer(i_def) :: stencil_depth, ncells, ncells_halo
 
@@ -325,6 +329,7 @@ contains
     call turbulence_fields%get_field('wvar', wvar)
     call turbulence_fields%get_field('gradrinr', gradrinr)
     call turbulence_fields%get_field('rhokm_w2', rhokm_w2)
+    call turbulence_fields%get_field('rhokm_bl', rhokm_bl)
     call turbulence_fields%get_field('tau_w2', tau_w2)
     call turbulence_fields%get_field('level_ent', level_ent)
     call turbulence_fields%get_field('level_ent_dsc', level_ent_dsc)
@@ -409,6 +414,7 @@ contains
     call surface_fields%get_field('tile_water_extract', tile_water_extract)
     call surface_fields%get_field('net_prim_prod', net_prim_prod)
     call surface_fields%get_field('surf_interp_w2', surf_interp_w2)
+    call surface_fields%get_field('surf_interp', surf_interp)
     call surface_fields%get_field('tau_land_w2', tau_land_w2)
     call surface_fields%get_field('tau_ssi_w2', tau_ssi_w2)
     call surface_fields%get_field('albedo_obs_scaling', albedo_obs_scaling)
@@ -481,7 +487,6 @@ contains
     ! Fields for interpolation to cell faces
     call u_physics%copy_field_properties(ngstress_w2)
     call u_physics%copy_field_properties(fd_tau_w2)
-    call theta%copy_field_properties(rhokm_bl)
     call theta%copy_field_properties(ngstress_bl)
     call rho%copy_field_properties(fd_taux)
     call rho%copy_field_properties(fd_tauy)
@@ -491,10 +496,6 @@ contains
     call zh%copy_field_properties(h_blend_orog)
     call zh%copy_field_properties(t1_sd_2d)
     call zh%copy_field_properties(q1_sd_2d)
-
-    vector_space => function_space_collection%get_fs( zh%get_mesh(), &
-                                                      0, W3, n_surf_interp )
-    call surf_interp%initialise(vector_space)
 
     ncells = mesh%get_last_edge_cell()
     ! Set stencil depth if required
@@ -618,10 +619,33 @@ contains
     end if
 
     ! Calculate explicit momentum diffusion on cell faces
-    call invoke(bl_exp_du_kernel_type(tau_w2, tau_land_w2, tau_ssi_w2,         &
+    call invoke(bl_exp_du_kernel_type(4_i_def, tau_w2, tau_land_w2, tau_ssi_w2,&
                                       rhokm_w2, rdz_fd1, u_physics,            &
                                       surf_interp_w2, ngstress_w2, fd_tau_w2,  &
                                       sea_current_w2_ptr) )
+
+    if (l_calc_tau_at_p) then
+      call dz_wth%copy_field_properties(rdz_wth)
+      call zh%copy_field_properties(taux_land)
+      call zh%copy_field_properties(tauy_land)
+      call zh%copy_field_properties(taux_ssi)
+      call zh%copy_field_properties(tauy_ssi)
+      call turbulence_fields%get_field('taux', taux)
+      call turbulence_fields%get_field('tauy', tauy)
+      call invoke(setval_X(rdz_wth, dz_wth),                                   &
+                  inc_X_powint_n(rdz_wth, (-1_i_def)),                         &
+                  setval_c(taux, 0.0_r_def),                                   &
+                  setval_c(tauy, 0.0_r_def),                                   &
+      ! Calculate explicit momentum diffusion at cell centres
+                  bl_exp_du_kernel_type(1_i_def, taux, taux_land, taux_ssi,    &
+                                        rhokm_bl, rdz_wth, u_in_w3,            &
+                                        surf_interp, ngstress_bl, fd_taux,     &
+                                        sea_u_current_ptr),                    &
+                  bl_exp_du_kernel_type(1_i_def, tauy, tauy_land, tauy_ssi,    &
+                                        rhokm_bl, rdz_wth, v_in_w3,            &
+                                        surf_interp, ngstress_bl, fd_tauy,     &
+                                        sea_v_current_ptr) )
+    end if
 
     if ( subroutine_timers ) call timer('bl_exp_alg')
 

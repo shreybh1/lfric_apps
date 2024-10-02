@@ -247,6 +247,8 @@
   <field id="conv_prog_precip" name="conv_prog_precip" long_name="convective_prognostic_precipitation" unit="kg m-2 s-1" grid_ref="full_level_face_grid" />
   <!-- electric fields -->
   <field id="flash_potential" name="flash_potential" long_name="lightning_flash_potential" unit="1" domain_ref="face" />
+  <!-- microphysics fields -->
+  <field id="precfrac" name="precfrac" long_name="precipitation_fraction" unit="1" grid_ref="full_level_face_grid" />
   <!-- casim microphysics fields -->
   <field id="nl_mphys" name="nl_mphys" long_name="number_concentration_of_cloud_droplets_after_microphysics" unit="kg-1" grid_ref="full_level_face_grid" />
   <field id="nr_mphys" name="nr_mphys" long_name="number_concentration_of_rain_after_microphysics" unit="kg-1" grid_ref="full_level_face_grid" />

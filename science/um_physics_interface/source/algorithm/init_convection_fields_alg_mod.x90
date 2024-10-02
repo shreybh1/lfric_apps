@@ -26,6 +26,8 @@ contains
   !> @param[in,out] convection_fields Collection of fields for convection scheme
   subroutine init_convection_fields_alg(convection_fields)
 
+    use cv_run_mod, only: l_conv_prog_precip, l_conv_prog_dtheta, l_conv_prog_dq
+
     implicit none
 
     ! Arguments
@@ -54,6 +56,8 @@ contains
     type( field_type ), pointer :: conv_prog_dtheta => null()
     type( field_type ), pointer :: conv_prog_dmv    => null()
     type( field_type ), pointer :: conv_prog_precip => null()
+    type( field_type ), pointer :: massflux_up
+    type( field_type ), pointer :: massflux_down
 
     call convection_fields%get_field('dt_conv', dt_conv)
     call convection_fields%get_field('dmv_conv', dmv_conv)
@@ -76,6 +80,8 @@ contains
     call convection_fields%get_field('conv_prog_dtheta', conv_prog_dtheta)
     call convection_fields%get_field('conv_prog_dmv', conv_prog_dmv)
     call convection_fields%get_field('conv_prog_precip', conv_prog_precip)
+    call convection_fields%get_field('massflux_up', massflux_up)
+    call convection_fields%get_field('massflux_down', massflux_down)
 
     ! Initialise increment fields to zero for use when the scheme is off
     call invoke( setval_c(dt_conv,      0.0_r_def), &
@@ -96,9 +102,13 @@ contains
                  setval_c(dd_mf_cb,     0.0_r_def), &
                  setval_c(ccw,          0.0_r_def), &
                  setval_c(cca,          0.0_r_def), &
-                 setval_c(conv_prog_dtheta, 0.0_r_def), &
-                 setval_c(conv_prog_dmv,    0.0_r_def), &
-                 setval_c(conv_prog_precip, 3.0e-4_r_def) )
+                 setval_c(massflux_up,  0.0_r_def), &
+                 setval_c(massflux_down, 0.0_r_def))
+
+    if (l_conv_prog_dtheta) call invoke(setval_c(conv_prog_dtheta, 0.0_r_def))
+    if (l_conv_prog_dq) call invoke(setval_c(conv_prog_dmv, 0.0_r_def))
+    if (l_conv_prog_precip) call invoke(setval_c(conv_prog_precip, 3.0e-4_r_def))
+
   end subroutine init_convection_fields_alg
 
 end module init_convection_fields_alg_mod

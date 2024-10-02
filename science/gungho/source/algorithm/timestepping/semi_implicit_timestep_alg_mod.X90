@@ -940,7 +940,7 @@ contains
                     derived_fields, turbulence_fields,                       &
                     cloud_fields, convection_fields,                         &
                     self%state_n(igh_t), self%mr_n,                          &
-                    model_clock%get_step(), cast_dt )
+                    model_clock%get_step(), cast_dt, .false. )
       call invoke(inc_X_plus_Y(self%state(igh_t), self%dtheta_cld))
       if (microphysics_casim) then
         call casim_activate_alg( mr, cloud_fields,                  &
