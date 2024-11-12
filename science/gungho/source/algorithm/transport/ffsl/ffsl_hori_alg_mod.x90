@@ -43,6 +43,9 @@ module ffsl_hori_alg_mod
   use transport_runtime_alg_mod,        only: transport_runtime_type
   use transport_runtime_collection_mod, only: get_transport_runtime
   use check_configuration_mod,          only: get_required_stencil_depth
+  use ffsl_advective_updates_alg_mod,   only: swift_outer_update_tracer, &
+                                              swift_inner_update_tracer, &
+                                              ffsl_advective_increment
 
   ! Kernels
   use sci_average_w2_to_w2b_kernel_mod, only: average_w2_to_w2b_kernel_type
@@ -54,10 +57,8 @@ module ffsl_hori_alg_mod
   use fv_difference_y_kernel_mod,       only: fv_difference_y_kernel_type
   use fv_divergence_x_kernel_mod,       only: fv_divergence_x_kernel_type
   use fv_divergence_y_kernel_mod,       only: fv_divergence_y_kernel_type
-  use psykal_lite_transport_mod,        only: invoke_ffsl_advective_increment,  &
-                                              invoke_swift_inner_update_tracer, &
-                                              invoke_swift_outer_update_tracer, &
-                                              invoke_ffsl_panel_swap_kernel_type
+  use psykal_lite_transport_mod,        only: invoke_ffsl_panel_swap_kernel_type
+
 
   ! Configuration options
   use io_config_mod,                    only: subroutine_timers
@@ -262,8 +263,8 @@ contains
     integer(kind=i_def),          pointer :: dep_stencil_extent_xy
 
     ! Fields and increments
-    type(r_tran_field_type)         :: flux
-    type(r_tran_field_type)         :: flux_broken
+    type(r_tran_field_type) :: flux
+    type(r_tran_field_type) :: flux_broken
 
     ! Pointer to field, to avoid unnecessary setval calculation
     type(r_tran_field_type),   target  :: field_big_halo
@@ -419,16 +420,9 @@ contains
     if ( subroutine_timers ) call timer('transport.ffsl_hori_update')
     call invoke( fv_divergence_x_kernel_type(increment_x, flux, detj_at_w3), &
                  fv_divergence_y_kernel_type(increment_y, flux, detj_at_w3) )
-    ! Compute advective increments, through division by unity transport --------
-    ! Following Putman and Lin, JCP, 2007:
-    ! conservative_field = q - dt * F(q)
-    ! adv_one   = 1 - dt * F(1)
-    ! inc_part  = q - conservative_field / adv_one
-    ! increment = inc_part / dt
-    ! Psykal lite code to optimise computation
-    ! @todo #4301: replace this with loop fusion
-    call invoke_ffsl_advective_increment(increment_x, field_n, dt, adv_one_x)
-    call invoke_ffsl_advective_increment(increment_y, field_n, dt, adv_one_y)
+
+    call ffsl_advective_increment(increment_x, field_n, dt, adv_one_x)
+    call ffsl_advective_increment(increment_y, field_n, dt, adv_one_y)
 
     if ( subroutine_timers ) call timer('transport.ffsl_hori_update')
 
@@ -804,11 +798,10 @@ contains
             adv_detj_xy => transport_runtime%get_adv_detj_xy(mesh_id, strang)
           end if
 
-          ! @todo #4301: replace this with loop fusion
-          call invoke_swift_outer_update_tracer(field_np1, field_x, field_y,   &
-                                                adv_detj_xy, adv_detj_x,       &
-                                                adv_detj_y, increment_x,       &
-                                                increment_y, dt )
+          call swift_outer_update_tracer(field_np1, field_x, field_y,   &
+                                         adv_detj_xy, adv_detj_x,       &
+                                         adv_detj_y, increment_x,       &
+                                         increment_y, dt )
 
         else ! COSMIC splitting
 
@@ -820,16 +813,8 @@ contains
           adv_one_x => transport_runtime%get_adv_unity_x(mesh_id, strang)
           adv_one_y => transport_runtime%get_adv_unity_y(mesh_id, strang)
 
-          ! Compute advective increments, through division by unity transport --
-          ! Following Putman and Lin, JCP, 2007:
-          ! conservative_field = q - dt * F(q)
-          ! adv_one   = 1 - dt * F(1)
-          ! inc_part  = q - conservative_field / adv_one
-          ! increment = inc_part / dt
-          ! Psykal lite code to optimise computation
-          ! @todo #4301: replace this with loop fusion
-          call invoke_ffsl_advective_increment(increment_x, field_y, dt, adv_one_x)
-          call invoke_ffsl_advective_increment(increment_y, field_x, dt, adv_one_y)
+          call ffsl_advective_increment(increment_x, field_y, dt, adv_one_x)
+          call ffsl_advective_increment(increment_y, field_x, dt, adv_one_y)
 
           if ( to_compute_field_np1 ) then
             call invoke( X_minus_bY(field_np1, field_n, dt, increment_x),      &
@@ -850,12 +835,10 @@ contains
           call invoke( fv_difference_x_kernel_type(increment_x, flux),         &
                        fv_difference_y_kernel_type(increment_y, flux) )
           ! Obtain updated mixing ratio by dividing by updated density
-          ! Psykal lite calculation to optimise loops
-          ! @todo #4301: replace this with loop fusion
-          call invoke_swift_outer_update_tracer(field_np1, field_x, field_y,   &
-                                                dry_mass_np1, dry_mass_x,      &
-                                                dry_mass_y, increment_x,       &
-                                                increment_y, dt )
+          call swift_outer_update_tracer(field_np1, field_x, field_y,   &
+                                         dry_mass_np1, dry_mass_x,      &
+                                         dry_mass_y, increment_x,       &
+                                         increment_y, dt )
         else  ! COSMIC splitting
           call conservative_field_np1%initialise( vector_space = field_fs )
           call conservative_field_n%initialise( vector_space = field_fs )
@@ -1163,18 +1146,16 @@ contains
     call invoke( fv_difference_x_kernel_type(increment_x, flux),               &
                  fv_difference_y_kernel_type(increment_y, flux) )
     ! Obtain updated mixing ratio by dividing by updated density
-    ! Psykal lite calculation to optimise loops
-    ! @todo #4301: replace this with loop fusion
     if (equation_form == equation_form_consistent) then
-      call invoke_swift_inner_update_tracer(field_x, field_n, dry_mass_x,      &
-                                            dry_mass_n, increment_x, step_dt)
-      call invoke_swift_inner_update_tracer(field_y, field_n, dry_mass_y,      &
-                                            dry_mass_n, increment_y, step_dt)
+      call swift_inner_update_tracer(field_x, field_n, dry_mass_x,      &
+                                     dry_mass_n, increment_x, step_dt)
+      call swift_inner_update_tracer(field_y, field_n, dry_mass_y,      &
+                                     dry_mass_n, increment_y, step_dt)
     else
-      call invoke_swift_inner_update_tracer(field_x, field_n, adv_detj_x,      &
-                                            detj_at_w3, increment_x, step_dt)
-      call invoke_swift_inner_update_tracer(field_y, field_n, adv_detj_y,      &
-                                            detj_at_w3, increment_y, step_dt)
+      call swift_inner_update_tracer(field_x, field_n, adv_detj_x,      &
+                                     detj_at_w3, increment_x, step_dt)
+      call swift_inner_update_tracer(field_y, field_n, adv_detj_y,      &
+                                     detj_at_w3, increment_y, step_dt)
     end if
 
     if ( subroutine_timers ) call timer('transport.ffsl_hori_update')

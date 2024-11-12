@@ -29,6 +29,8 @@ module ffsl_vert_alg_mod
   use transport_metadata_mod,           only: transport_metadata_type
   use transport_runtime_alg_mod,        only: transport_runtime_type
   use transport_runtime_collection_mod, only: get_transport_runtime
+  use ffsl_advective_updates_alg_mod,   only: swift_inner_update_tracer, &
+                                              ffsl_advective_increment
 
   ! Kernels
   use ffsl_flux_z_constant_kernel_mod,  only: ffsl_flux_z_constant_kernel_type
@@ -46,8 +48,6 @@ module ffsl_vert_alg_mod
 
   ! PSyKAl-lite code
   use psykal_lite_mod,                  only: invoke_copy_to_rtran
-  use psykal_lite_transport_mod,        only: invoke_ffsl_advective_increment, &
-                                              invoke_swift_inner_update_tracer
 
   implicit none
 
@@ -164,11 +164,9 @@ contains
 
           call invoke( fv_difference_z_kernel_type(increment, mass_flux) )
 
-          ! Use psykal lite code to optimise the pointwise calculation
-          ! @todo #4301: replace this with loop fusion
-          call invoke_swift_inner_update_tracer(field_np1, field_n,            &
-                                                dry_mass_np1, dry_mass_n,      &
-                                                increment, step_dt)
+          call swift_inner_update_tracer(field_np1, field_n,            &
+                                         dry_mass_np1, dry_mass_n,      &
+                                         increment, step_dt)
 
         if (to_compute_adv_inc) then
           ! Increment is really a negative increment, so subtract field_np1
@@ -183,13 +181,7 @@ contains
 
           call invoke( fv_divergence_z_kernel_type(increment, mass_flux, detj_at_w3) )
           ! Get the advective increment from these conservative increments
-          ! conservative_field_np1 = q - dt * F(q)
-          ! adv_one   = 1 - dt * F(1)
-          ! inc_part  = q - conservative_field_np1 / adv_one
-          ! increment = inc_part / dt
-          ! Use psykal lite code to optimise pointwise calculation
-          ! @todo #4301: replace this with loop fusion
-          call invoke_ffsl_advective_increment(increment, field_n, step_dt, adv_one)
+          call ffsl_advective_increment(increment, field_n, step_dt, adv_one)
 
           if (to_compute_field_np1) call invoke( X_minus_bY(field_np1, field_n,  &
                                                             step_dt, increment) )
@@ -204,11 +196,9 @@ contains
 
         call invoke( fv_difference_z_kernel_type(increment, mass_flux) )
 
-        ! Use psykal lite code to optimise the pointwise calculation
-        ! @todo #4301: replace this with loop fusion
-        call invoke_swift_inner_update_tracer(field_np1, field_n,              &
-                                              dry_mass_np1, dry_mass_n,        &
-                                              increment, step_dt)
+        call swift_inner_update_tracer(field_np1, field_n,              &
+                                       dry_mass_np1, dry_mass_n,        &
+                                       increment, step_dt)
 
         if (to_compute_adv_inc) then
           ! Increment is really a negative increment, so subtract field_np1
