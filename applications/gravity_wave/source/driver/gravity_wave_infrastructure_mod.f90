@@ -225,7 +225,8 @@ contains
     !-------------------------------------------------------------------------
     ! Initialise aspects of output
     !-------------------------------------------------------------------------
-    call init_io( program_name, modeldb, chi_inventory, panel_id_inventory)
+    call init_io( program_name, prime_mesh_name, &
+                  modeldb, chi_inventory, panel_id_inventory)
 
     !-------------------------------------------------------------------------
     ! Setup constants

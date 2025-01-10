@@ -745,16 +745,16 @@ contains
         end if
       end do
 
-      call init_io( io_context_name, modeldb, &
-                    chi_inventory, panel_id_inventory,       &
-                    populate_filelist=files_init_ptr,        &
-                    alt_mesh_names=extra_io_mesh_names,      &
+      call init_io( io_context_name, prime_mesh_name, modeldb, &
+                    chi_inventory, panel_id_inventory,         &
+                    populate_filelist=files_init_ptr,          &
+                    alt_mesh_names=extra_io_mesh_names,        &
                     before_close=before_context_close )
 
     else
-      call init_io( io_context_name, modeldb, &
-                    chi_inventory, panel_id_inventory,       &
-                    populate_filelist=files_init_ptr,        &
+      call init_io( io_context_name, prime_mesh_name, modeldb, &
+                    chi_inventory, panel_id_inventory,         &
+                    populate_filelist=files_init_ptr,          &
                     before_close=before_context_close )
     end if
 

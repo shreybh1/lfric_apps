@@ -390,12 +390,14 @@ contains
       allocate(extra_io_mesh_names(1))
       extra_io_mesh_names(1) = aerosol_mesh%get_mesh_name()
       call init_io( xios_ctx,           &
+                    prime_mesh_name,    &
                     modeldb,            &
                     chi_inventory,      &
                     panel_id_inventory, &
                     alt_mesh_names=extra_io_mesh_names )
     else
       call init_io( xios_ctx,           &
+                    prime_mesh_name,    &
                     modeldb,            &
                     chi_inventory,      &
                     panel_id_inventory )

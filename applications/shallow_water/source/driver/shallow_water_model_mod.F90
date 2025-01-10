@@ -211,8 +211,8 @@ module shallow_water_model_mod
     ! domain and context
 
     files_init_ptr => init_shallow_water_files
-    call init_io( io_context_name, modeldb,   &
-                  chi_inventory, panel_id_inventory, &
+    call init_io( io_context_name, prime_mesh_name, modeldb, &
+                  chi_inventory, panel_id_inventory,         &
                   populate_filelist=files_init_ptr )
 
     !-------------------------------------------------------------------------

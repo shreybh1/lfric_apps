@@ -269,6 +269,7 @@ contains
 
     ! Initialise the IO context with all the required info
     call init_io( xios_ctx_dst,                     &
+                  mesh_dst%get_mesh_name(),         &
                   modeldb,                          &
                   chi_inventory,                    &
                   panel_id_inventory,               &
