@@ -39,7 +39,6 @@ module compute_geopotential_kernel_mod_test
 
   integer(i_def), parameter :: coord_system = COORD_SYSTEM_XYZ
   integer(i_def), parameter :: geometry     = GEOMETRY_SPHERICAL
-  logical(l_def), parameter :: shallow      = .false.
 
 contains
 
@@ -80,6 +79,7 @@ contains
     class(compute_geopotential_kernel_test_type), intent(inout) :: this
 
     real(r_def), parameter :: tol = 1.0e-12_r_def
+    logical(l_def) :: shallow
 
     real(r_def) :: answer
 
@@ -92,6 +92,21 @@ contains
 
     this%basis(1,1,1) = 1.0_r_def
 
+    ! Test shallow geometry
+    shallow = .true.
+    call compute_geopotential_code( nlayers,                          &
+                                    this%phi, this%x, this%y, this%z, &
+                                    gravity, radius, coord_system,    &
+                                    shallow, geometry,                &
+                                    ndf, undf, this%map, ndf, undf,   &
+                                    this%map, this%basis )
+
+    ! answer = gravity * (z - radius)
+    answer = gravity * 10000.0_r_def
+    @assertEqual( answer, this%phi(1), tol )
+
+    ! Test deep geometry
+    shallow = .false.
     call compute_geopotential_code( nlayers,                          &
                                     this%phi, this%x, this%y, this%z, &
                                     gravity, radius, coord_system,    &

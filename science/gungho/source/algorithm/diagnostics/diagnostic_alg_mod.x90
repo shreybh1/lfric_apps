@@ -569,16 +569,18 @@ contains
     type( field_type ) :: tot_col_uv_kinetic_energy ! column kinetic energy per unit area for U and V (horizontal)
     type( field_type ) :: tot_col_w_kinetic_energy  ! column kinetic energy per unit area for W (vertical)
     type( field_type ) :: tot_col_encorr            ! energy correction per unit area
+    type( field_type ) :: geopotential              ! geopotential from the planet centre
 
     integer(kind=i_def)  :: i_mr
     real(kind=r_def)     :: cvTdot
+    real(kind=r_def)     :: surface_geopotential
 
     ! Set pointers
     type( field_type ), pointer :: theta_in_w3
     type( field_type ), pointer :: u_in_w3
     type( field_type ), pointer :: v_in_w3
     type( field_type ), pointer :: w_in_w3
-    type( field_type ), pointer :: geopotential
+    type( field_type ), pointer :: normalised_geopotential
     type( field_type ), pointer :: height_w3
     type( field_type ), pointer :: height_wth
     type(function_space_type), pointer :: w3_fs
@@ -690,11 +692,16 @@ contains
     if (init_diag(tot_col_pot_energy_gr,'processed__tot_col_pot_energy_gr') .and. use_xios_io) then
 
       ! Use geopotential to calculate potential energy from planet centre
-      geopotential => get_geopotential( mesh%get_id() )
-      call invoke( setval_X(energy_field, geopotential),                            &
-                   inc_X_times_Y(energy_field, rho_field),                          &
-                   compute_column_integral_kernel_type(energy_field, height_w3,     &
-                                                 height_wth, tot_col_pot_energy_gr, &
+      ! This requires the normalised geopotential (zero at the surface)
+      ! and the surface geopotential
+      normalised_geopotential => get_geopotential( mesh%get_id() )
+      call geopotential%initialise( normalised_geopotential%get_function_space())
+      surface_geopotential = planet_radius*gravity
+      call invoke( a_plus_X(geopotential, surface_geopotential, normalised_geopotential), &
+                   setval_X(energy_field, geopotential),                                  &
+                   inc_X_times_Y(energy_field, rho_field),                                &
+                   compute_column_integral_kernel_type(energy_field, height_w3,           &
+                                                 height_wth, tot_col_pot_energy_gr,       &
                                                  planet_radius) )
       call tot_col_pot_energy_gr%write_field(tot_col_pot_energy_gr%get_name())
 

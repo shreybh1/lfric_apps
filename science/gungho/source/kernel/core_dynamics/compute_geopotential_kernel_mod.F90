@@ -3,9 +3,13 @@
 ! For further details please refer to the file LICENCE.original which you
 ! should have received as part of this distribution.
 !-----------------------------------------------------------------------------
-!> @brief Computes the geopotential field.
-!>
-!> Computes the geopotential field Phi = g*r or g*z for Cartesian domains.
+!> @brief Computes the geopotential field for shallow (constant gradient with height)
+!> and deep (varying gradient with height) geometries. The geopotential is
+!> normalised so that it is zero at the domain surface (radius = planet_radius).
+!> For shallow geometries, this gives geopotential = gravity*(radius - planet_radius)
+!> For deep geometries, this gives geopotential = gravity*planet_radius/radius*(radius - planet_radius)
+!> and for Cartesian geometries the simpler form geopotential = gravity*height
+!> is used.
 !>
 module compute_geopotential_kernel_mod
 
@@ -151,7 +155,7 @@ subroutine compute_geopotential_code(nlayers, phi,               &
           end do
           call xyz2llr(coord(1), coord(2), coord(3), lon, lat, radius)
 
-            phi_shallow = gravity*radius
+            phi_shallow = gravity*(radius - planet_radius)
             phi_deep    = -gravity*planet_radius*(planet_radius/radius - 1.0_r_def)
             phi(map_w3(df) + k) = shallow_switch*phi_shallow &
                                 + (1.0_r_def-shallow_switch)*phi_deep
@@ -167,7 +171,7 @@ subroutine compute_geopotential_code(nlayers, phi,               &
             radius = radius + chi_3( map_chi(dfc) + k )*chi_basis(1,dfc,df)
           end do
 
-          phi_shallow = gravity*radius
+          phi_shallow = gravity*(radius - planet_radius)
           phi_deep    = -gravity*planet_radius*(planet_radius/radius - 1.0_r_def)
           phi(map_w3(df) + k) = shallow_switch*phi_shallow &
                               + (1.0_r_def-shallow_switch)*phi_deep

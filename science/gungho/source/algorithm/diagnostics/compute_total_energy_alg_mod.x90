@@ -37,7 +37,7 @@ module compute_total_energy_alg_mod
   use dycore_constants_mod,          only: get_geopotential
   use mesh_mod,                      only: mesh_type
   use mr_indices_mod,                only: nummr, imr_cl, imr_ci, imr_r, imr_s
-  use planet_config_mod,             only: cv
+  use planet_config_mod,             only: cv, gravity
   use quadrature_xyoz_mod,           only: quadrature_xyoz_type
   use quadrature_rule_gaussian_mod,  only: quadrature_rule_gaussian_type
   use timer_mod,                     only: timer
@@ -121,10 +121,12 @@ contains
 
     real( kind=r_def ) :: Lcf
     real( kind=r_def ) :: area
+    real( kind=r_def ) :: surface_geopotential
 
     if ( subroutine_timers ) call timer( "compute_total_energy" )
 
     geopotential => get_geopotential( mesh%get_id() )
+    surface_geopotential = planet_radius*gravity
 
     select case( integral_method )
     case( integral_method_fe )
@@ -145,7 +147,9 @@ contains
                                                    potential, internal,   &
                                                    moist_int,             &
                                                    u, rho, exner, theta,  &
-                                                   mr, geopotential, chi, &
+                                                   mr, geopotential,      &
+                                                   surface_geopotential,  &
+                                                   chi,                   &
                                                    panel_id, cv, qr ),    &
                    inc_X_plus_Y( energy, kinetic_uv ),                    &
                    inc_X_plus_Y( energy, kinetic_w ),                     &
@@ -194,6 +198,7 @@ contains
                    setval_X(energy_term, w_in_w3),                      &
                    inc_X_powint_n(energy_term, 2_i_def),                &
                    inc_X_plus_bY(energy_field, 0.5_r_def, energy_term), & ! kinetic
+                   inc_a_plus_X(surface_geopotential, energy_field),    & ! surface_geopotential
                    inc_X_plus_Y(energy_field, geopotential),            & ! geopotential
                    X_times_Y(energy_term, theta_in_w3, exner),          &
                    inc_X_plus_bY(energy_field, cv, energy_term),        & ! dry internal

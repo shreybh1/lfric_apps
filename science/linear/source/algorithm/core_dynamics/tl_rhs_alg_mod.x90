@@ -14,7 +14,6 @@ module tl_rhs_alg_mod
   use sci_fem_constants_mod,               only: get_mass_matrix,    &
                                                  get_inverse_mass_matrix
   use dycore_constants_mod,                only: get_coriolis,       &
-                                                 get_geopotential,   &
                                                  get_w2_mass_matrix, &
                                                  w2_damping_layer_matrix
   use field_mod,                           only: field_type
@@ -107,7 +106,6 @@ subroutine tl_rhs_alg(rhs, alpha_dt, base_state, state, moist_dyn,        &
                                     coriolis   => null()
     type(field_type), pointer :: chi(:)        => null(), &
                                  panel_id      => null(), &
-                                 geopotential  => null(), &
                                  u             => null(), &
                                  theta         => null(), &
                                  rho           => null(), &
@@ -139,7 +137,6 @@ subroutine tl_rhs_alg(rhs, alpha_dt, base_state, state, moist_dyn,        &
 
     mesh => base_state(igh_u)%get_mesh()
 
-    geopotential => get_geopotential(mesh%get_id())
     mm_wtheta    => get_mass_matrix(Wtheta, mesh%get_id())
     chi          => get_coordinates(mesh%get_id())
     panel_id     => get_panel_id(mesh%get_id())
@@ -283,7 +280,7 @@ subroutine tl_rhs_alg(rhs, alpha_dt, base_state, state, moist_dyn,        &
 
     nullify( mm_vel, mm_wtheta, mm_w3_inv,       &
              chi, panel_id,                      &
-             geopotential, u, theta, rho, exner, &
+             u, theta, rho, exner,               &
              mesh, reference_element )
 
 
