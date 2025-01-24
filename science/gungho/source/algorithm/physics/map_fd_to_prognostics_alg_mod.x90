@@ -437,7 +437,10 @@ contains
 
     end if ! associated(coriolis)
 
+    ! Get the index of the level closest to the height, ignoring the top eta
+    ! level as eos_level is to be used for a W3 space rather than Wtheta
     eos_level = get_nearest_level( mesh, eos_height )
+    if ( eos_level == (mesh%get_nlayers() + 1) ) eos_level = eos_level - 1
 
     ! Initialize the vertical profile by starting with the equation of state at
     ! eos_level, and then integrating from this level to the top and the bottom
@@ -454,7 +457,7 @@ contains
 
   end subroutine hydrostatic_balance
 
-  !> @brief Returns the vertical level index
+  !> @brief Returns the index of the vertical level closest to the input height
   !> @details Find the index of the vertical layer that is closest to a given
   !!          height that is specified as an integer percentage of the total height.
   !> @param[in] mesh   The mesh from which to obtain the eta vertical levels
@@ -468,9 +471,11 @@ contains
     integer(i_def),    intent( in ) :: height
     integer(i_def)                  :: level
     real(r_def),        allocatable :: levels(:), abs_levels(:)
+    integer(i_def)                  :: eta_level_number
 
-    allocate( levels( mesh%get_nlayers() ) )
-    allocate( abs_levels( mesh%get_nlayers() ) )
+    eta_level_number = mesh%get_nlayers() + 1
+    allocate( levels( eta_level_number ) )
+    allocate( abs_levels( eta_level_number ) )
 
     call mesh%get_eta( levels )
 
