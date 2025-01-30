@@ -64,4 +64,10 @@ ifeq ($(shell expr ${CRAYFTN_VERSION} \>= 015000000), 1)
     %conv_comorph_kernel_mod.o %conv_comorph_kernel_mod.mod: private FFLAGS_DEBUG = -G0
     %conv_comorph_alg_mod_psy.o %conv_comorph_alg_mod_psy.mod: private FFLAGS_SAFE_OPTIMISATION = -O0
     %conv_comorph_alg_mod_psy.o %conv_comorph_alg_mod_psy.mod: private FFLAGS_DEBUG = -G0
+    %parcel_ascent_5a.o %parcel_ascent_5a.mod: private FFLAGS_EXTRA = $(FFLAGS_UM_PHYSICS) -h vector0
+    # fast-debug options
+    %qsat_mod.o %qsat_mod.mod: private FFLAGS_SAFE_OPTIMISATION = -O2 -hflex_mp=strict
+    %glue_conv-6a.o %glue_conv-6a.mod: private FFLAGS_SAFE_OPTIMISATION = -O2 -hflex_mp=strict
+    %sci_iterative_solver_mod.o %sci_iterative_solver_mod.mod: private FFLAGS_SAFE_OPTIMISATION = -O2 -hflex_mp=strict
+    %semi_implicit_timestep_alg_mod.o % %semi_implicit_timestep_alg_mod.mod: private FFLAGS_SAFE_OPTIMISATION = -O2 -hflex_mp=strict
 endif

@@ -86,7 +86,7 @@
         "opt_confs": ["nwp_gal9_c224"],
         "resolution": "C224_MG",
         "DT": 720,
-        "tsteps": 720,
+        "tsteps": 120,
         "mpi_parts": 1176,
         "wallclock": 50,
         "xios_nodes": 4,

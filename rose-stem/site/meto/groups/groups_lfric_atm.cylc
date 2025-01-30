@@ -406,6 +406,8 @@
         "lfric_atm_ral_ex1a_developer",
         "lfric_atm_rce_test-BiP64x64-1500x1500_MG_ex1a_cce_fast-debug-64bit",
         "lfric_atm_scm_ex1a_developer",
+        "lfric_atm_nwp_gal9-C224_MG_ex1a_cce_fast-debug-64bit",
+        "lfric_atm_nwp_gal9-C224_MG_ex1a_cce_fast-debug-64bit-rbl32",
     ],
     "lfric_atm_ex1a_extra": [
         "lfric_atm_nwp_ex1a_extra",
@@ -415,7 +417,6 @@
     ],
     "lfric_atm_ex1a_weekly": [
         "lfric_atm_nwp_gal9-C224_MG_ex1a_cce_production-64bit-rbl32",
-        "lfric_atm_nwp_gal9-C224_MG_ex1a_cce_full-debug-64bit-rbl32",
         "lfric_atm_nwp_gal9_copy-C224_MG_ex1a_cce_full-debug-64bit-rbl32",
         "lfric_atm_clim_gal9-C48_MG_ex1a_cce_production-64bit-rbl32",
         "lfric_atm_ral_ex1a_weekly",
