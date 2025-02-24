@@ -36,33 +36,37 @@
 # Modified by J. Henrichs, Bureau of Meteorology
 # Modified by S. Siso and N. Nobre, STFC Daresbury Lab
 
-'''File containing a PSyclone transformation script for the Dynamo0.3
-API to apply loop fusion generically. Fusion is attempted for all
-adjacent loops at the top level of a schedule. It will not fuse loops
-that are lower in the schedule e.g. coloured loops. This can be
-applied via the -s option in the psyclone script.
+'''File containing a PSyclone transformation script for the LFRic 
+(Dynamo0p3) API to apply loop fusion generically. Fusion is attempted 
+for all adjacent loops at the top level of a schedule. It will not 
+fuse loops that are lower in the schedule e.g. coloured loops. This 
+can be applied via the -s option in the psyclone script.
 
 '''
 from __future__ import absolute_import, print_function
 from psyclone.domain.lfric.transformations import LFRicLoopFuseTrans
+from psyclone.psyGen import InvokeSchedule
 from psyclone.transformations import TransformationError
 from psyclone_tools import (redundant_computation_setval, colour_loops,
-                            openmp_parallelise_loops,
                             view_transformed_schedule)
-def fuse_loops(psy):
 
-    '''PSyclone transformation script for the Dynamo0.3 API to apply loop
-    fusion generically to all top level loops.
+
+def fuse_loops(psyir):
+    '''
+    PSyclone transformation script for the LFRic (Dynamo0p3) API to 
+    apply loop fusion generically to all top level loops.
+
+    :param psyir: the PSyIR of the PSy-layer.
+    :type psyir: :py:class:`psyclone.psyir.nodes.FileContainer`
 
     '''
     total_fused = 0
     lf_trans = LFRicLoopFuseTrans()
 
-    # Loop over all of the Invokes in the PSy object
-    for invoke in psy.invokes.invoke_list:
+    # Loop over all of the InvokeSchedule in the PSyIR object
+    for schedule in psyir.walk(InvokeSchedule):
 
         local_fused = 0
-        schedule = invoke.schedule
 
         # Loop over all nodes in reverse order
         idx = len(schedule.children) - 1
@@ -75,7 +79,7 @@ def fuse_loops(psy):
                         lf_trans.apply(prev_node, node, {"same_space": True})
                         local_fused += 1
                     except TransformationError:
-                       pass
+                        pass
             except AttributeError:
                 pass
             idx -= 1
@@ -86,11 +90,15 @@ def fuse_loops(psy):
 
     print(f"Fused {total_fused} loops")
 
-def trans(psy):
 
-    redundant_computation_setval(psy)
-    fuse_loops(psy)
-    colour_loops(psy)
-    view_transformed_schedule(psy)
+def trans(psyir):
+    '''
+    :param psyir: the PSyIR of the PSy-layer.
+    :type psyir: :py:class:`psyclone.psyir.nodes.FileContainer`
 
-    return psy
+    '''
+
+    redundant_computation_setval(psyir)
+    fuse_loops(psyir)
+    colour_loops(psyir)
+    view_transformed_schedule(psyir)

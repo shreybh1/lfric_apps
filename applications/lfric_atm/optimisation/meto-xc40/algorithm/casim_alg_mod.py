@@ -15,14 +15,19 @@ from psyclone_tools import (redundant_computation_setval, colour_loops,
                             view_transformed_schedule)
 from psyclone.transformations import (Dynamo0p3OMPLoopTrans,
                                       OMPParallelTrans)
+from psyclone.psyGen import InvokeSchedule
 
 
-def trans(psy):
+def trans(psyir):
     '''
     Applies PSyclone colouring and redundant computation transformations.
+
+    :param psyir: the PSyIR of the PSy-layer.
+    :type psyir: :py:class:`psyclone.psyir.nodes.FileContainer`
+
     '''
-    redundant_computation_setval(psy)
-    colour_loops(psy)
+    redundant_computation_setval(psyir)
+    colour_loops(psyir)
 
     # Extracted from psyclone tools#
     # openmp_parallelise_loops#
@@ -34,18 +39,18 @@ def trans(psy):
     # such as this where we want to avoid the subroutine
     # casim_kernel_type or as psyclone knows is in it's representaion
     # invoke_1_casim_kernel_type
+
     otrans = Dynamo0p3OMPLoopTrans()
     oregtrans = OMPParallelTrans()
-    # Loop over all the Invokes in the PSy object
-    for invoke in psy.invokes.invoke_list:
-        if invoke != psy.invokes.get("invoke_casim_kernel_type"):
-            schedule = invoke.schedule
 
+    # Loop over all the InvokeSchedule in the PSyIR object
+    for subroutine in psyir.walk(InvokeSchedule):
+        if subroutine.invoke != psyir.invokes.get("invoke_casim_kernel_type"):
             # Add OpenMP to loops unless they are over colours or are null
-            for loop in schedule.loops():
+            for loop in subroutine.loops():
                 if loop.loop_type not in ["colours", "null"]:
                     oregtrans.apply(loop)
                     otrans.apply(loop, options={"reprod": True})
     # Extracted from psyclone tools#
 
-    view_transformed_schedule(psy)
+    view_transformed_schedule(psyir)

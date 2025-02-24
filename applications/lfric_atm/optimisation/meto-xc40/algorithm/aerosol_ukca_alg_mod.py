@@ -16,13 +16,16 @@ from psyclone_tools import (redundant_computation_setval, colour_loops,
                             view_transformed_schedule)
 
 
-def trans(psy):
+def trans(psyir):
     '''
     Applies PSyclone colouring and redundant computation transformations.
     Note that PSyclone currently cannot apply OpenMP transformations
     to UKCA because it is not thread-safe.
 
+    :param psyir: the PSyIR of the PSy-layer.
+    :type psyir: :py:class:`psyclone.psyir.nodes.FileContainer`
+
     '''
-    redundant_computation_setval(psy)
-    colour_loops(psy)
-    view_transformed_schedule(psy)
+    redundant_computation_setval(psyir)
+    colour_loops(psyir)
+    view_transformed_schedule(psyir)

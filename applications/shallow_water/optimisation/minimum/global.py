@@ -18,11 +18,14 @@ from psyclone_tools import (redundant_computation_setval,
                             view_transformed_schedule)
 
 
-def trans(psy):
+def trans(psyir):
     '''
     Applies PSyclone redundant computation transformations on
     initialisation built-ins only.
 
+    :param psyir: the PSyIR of the PSyIR-layer.
+    :type psyir: :py:class:`psyclone.psyir.nodes.FileContainer`
+
     '''
-    redundant_computation_setval(psy)
-    view_transformed_schedule(psy)
+    redundant_computation_setval(psyir)
+    view_transformed_schedule(psyir)
