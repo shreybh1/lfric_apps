@@ -16,7 +16,8 @@ program runge_kutta
   use driver_modeldb_mod,     only: modeldb_type
   use halo_comms_mod,         only: initialise_halo_comms, &
                                     finalise_halo_comms
-  use log_mod,                only: log_event,       &
+  use log_mod,                only: initialise_logging, finalise_logging, &
+                                    log_event,       &
                                     LOG_LEVEL_ERROR, &
                                     LOG_LEVEL_INFO
   use mpi_mod,                only: create_comm, destroy_comm, global_mpi
@@ -65,6 +66,7 @@ program runge_kutta
 
   call create_comm( communicator )
   call modeldb%mpi%initialise( communicator )
+  call initialise_logging( communicator, "linear_integration-runge_kutta-test" )
   call initialise_halo_comms( communicator )
 
   call log_event( 'TL testing running ...', LOG_LEVEL_INFO )
@@ -182,6 +184,7 @@ program runge_kutta
   call final_collections()
   call final_configuration()
   call finalise_halo_comms()
+  call finalise_logging()
   call destroy_comm()
 
 end program runge_kutta

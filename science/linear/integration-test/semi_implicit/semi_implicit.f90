@@ -15,7 +15,8 @@ program semi_implicit
   use driver_time_mod,         only: init_time, final_time
   use driver_modeldb_mod,      only: modeldb_type
   use halo_comms_mod,          only: initialise_halo_comms, finalise_halo_comms
-  use log_mod,                 only: log_event,       &
+  use log_mod,                 only: initialise_logging, finalise_logging, &
+                                     log_event,       &
                                      LOG_LEVEL_ERROR, &
                                      LOG_LEVEL_INFO
   use mpi_mod,                 only: mpi_type, global_mpi, &
@@ -61,6 +62,7 @@ program semi_implicit
 
   call create_comm( communicator )
   call modeldb%mpi%initialise( communicator )
+  call initialise_logging( communicator, "linear_interface-semi_implicit-test" )
   call initialise_halo_comms( communicator )
 
   call log_event( 'TL testing running ...', LOG_LEVEL_INFO )
@@ -160,6 +162,7 @@ program semi_implicit
   call final_collections()
   call final_configuration()
   call finalise_halo_comms()
+  call finalise_logging()
   call destroy_comm()
 
 end program semi_implicit
