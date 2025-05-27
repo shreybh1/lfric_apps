@@ -67,7 +67,7 @@ subroutine lsp_subgrid(                                                        &
 
 !Use in reals in lsprec precision, both microphysics related and general atmos
 use lsprec_mod, only: qcfmin, ice_width, zerodegc,                             &
-                      zero, half, one, two, small_number
+                      zero, half, one, two
 
 use mphys_inputs_mod, only: l_mcr_precfrac, i_update_precfrac, i_homog_areas
 
@@ -242,8 +242,9 @@ if (lhook) call dr_hook(ModuleName//':'//RoutineName,zhook_in,zhook_handle)
 ! will now represent sub-partitions of the prognostic precip fraction.
 if ( l_mcr_precfrac ) then
   do i = 1, points
-    rainfrac(i) = precfrac_k(i)
-    rainfraci(i) = one / max( rainfrac(i), small_number )
+    ! Impose min limit on rainfrac, to avoid rare div-by-zero
+    rainfrac(i) = max( precfrac_k(i), 0.001_real_lsprec )
+    rainfraci(i) = one / rainfrac(i)
     rain_new(i) = zero
   end do
   if ( i_update_precfrac == i_homog_areas ) then
