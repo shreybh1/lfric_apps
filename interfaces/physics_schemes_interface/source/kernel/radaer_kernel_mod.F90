@@ -9,16 +9,18 @@
 
 module radaer_kernel_mod
 
-use argument_mod,      only: arg_type,                  &
-                             GH_FIELD, GH_REAL,         &
-                             GH_READ, GH_WRITE,         &
-                             CELL_COLUMN, GH_INTEGER,   &
-                             ANY_DISCONTINUOUS_SPACE_1, &
-                             ANY_DISCONTINUOUS_SPACE_2, &
-                             ANY_DISCONTINUOUS_SPACE_3, &
-                             ANY_DISCONTINUOUS_SPACE_4
+use argument_mod,      only: arg_type,                                         &
+                             GH_FIELD, GH_REAL, GH_READ, GH_WRITE,             &
+                             CELL_COLUMN, GH_INTEGER,                          &
+                             ANY_DISCONTINUOUS_SPACE_1,                        &
+                             ANY_DISCONTINUOUS_SPACE_2,                        &
+                             ANY_DISCONTINUOUS_SPACE_3,                        &
+                             ANY_DISCONTINUOUS_SPACE_4,                        &
+                             ANY_DISCONTINUOUS_SPACE_5
 
-use fs_continuity_mod, only: WTHETA
+use empty_data_mod,    only: empty_real_data
+
+use fs_continuity_mod, only: WTHETA, W3
 
 use kernel_mod,        only: kernel_type
 
@@ -32,9 +34,12 @@ implicit none
 
 type, public, extends(kernel_type) :: radaer_kernel_type
   private
-  type(arg_type) :: meta_args(65) = (/                &
+  type(arg_type) :: meta_args(80) = (/                &
        arg_type(GH_FIELD, GH_REAL, GH_READ,  WTHETA), & ! theta_in_wth
        arg_type(GH_FIELD, GH_REAL, GH_READ,  WTHETA), & ! exner_in_wth
+       arg_type(GH_FIELD, GH_REAL, GH_READ,  W3),     & ! exner_in_w3
+       arg_type(GH_FIELD, GH_REAL, GH_READ,  WTHETA), & ! rho_in_wth
+       arg_type(GH_FIELD, GH_REAL, GH_READ,  WTHETA), & ! dz_in_wth
        ! trop_level
        arg_type(GH_FIELD, GH_INTEGER, GH_READ,  ANY_DISCONTINUOUS_SPACE_1), &
        ! lit_fraction
@@ -106,7 +111,31 @@ type, public, extends(kernel_type) :: radaer_kernel_type
        ! aer_lw_scattering
        arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_4), &
        ! aer_lw_asymmetry
-       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_4)  &
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_4), &
+       ! aod_ukca_ait_sol
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aaod_ukca_ait_sol
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aod_ukca_acc_sol
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aaod_ukca_acc_sol
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aod_ukca_cor_sol
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aaod_ukca_cor_sol
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aod_ukca_ait_ins
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aaod_ukca_ait_ins
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aod_ukca_acc_ins
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aaod_ukca_acc_ins
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aod_ukca_cor_ins
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5), &
+       ! aaod_ukca_cor_ins
+       arg_type(GH_FIELD, GH_REAL, GH_WRITE, ANY_DISCONTINUOUS_SPACE_5) &
        /)
   integer :: operates_on = CELL_COLUMN
 contains
@@ -122,6 +151,11 @@ contains
 !> @param[in]     theta_in_wth       Potential temperature field
 !> @param[in]     exner_in_wth       Exner pressure
 !>                                    in potential temperature space
+!> @param[in]     exner_in_w3        Exner pressure
+!>                                    in density space
+!> @param[in]     rho_in_wth         Density field
+!>                                    in potential temperature space
+!> @param[in]     dz_in_wth          Depth of temperature space levels
 !> @param[in]     trop_level         Level of tropopause
 !> @param[in]     lit_fraction       Fraction of radiation timestep lit by SW
 !> @param[in]     n_ait_sol          Climatology aerosol field
@@ -185,12 +219,30 @@ contains
 !> @param[in,out] aer_lw_absorption  MODE aerosol LW absorption
 !> @param[in,out] aer_lw_scattering  MODE aerosol LW scattering
 !> @param[in,out] aer_lw_asymmetry   MODE aerosol LW asymmetry
+!> @param[in,out] aod_ukca_ait_sol   Modal extinction aerosol opt depth
+!> @param[in,out] aaod_ukca_ait_sol  Modal absorption aerosol opt depth
+!> @param[in,out] aod_ukca_acc_sol   Modal extinction aerosol opt depth
+!> @param[in,out] aaod_ukca_acc_sol  Modal absorption aerosol opt depth
+!> @param[in,out] aod_ukca_cor_sol   Modal extinction aerosol opt depth
+!> @param[in,out] aaod_ukca_cor_sol  Modal absorption aerosol opt depth
+!> @param[in,out] aod_ukca_ait_ins   Modal extinction aerosol opt depth
+!> @param[in,out] aaod_ukca_ait_ins  Modal absorption aerosol opt depth
+!> @param[in,out] aod_ukca_acc_ins   Modal extinction aerosol opt depth
+!> @param[in,out] aaod_ukca_acc_ins  Modal absorption aerosol opt depth
+!> @param[in,out] aod_ukca_cor_ins   Modal extinction aerosol opt depth
+!> @param[in,out] aaod_ukca_cor_ins  Modal absorption aerosol opt depth
 !> @param[in]     ndf_wth            Number of degrees of freedom per cell for
 !>                                    potential temperature space
 !> @param[in]     undf_wth           Unique number of degrees of freedom for
 !>                                    potential temperature space
 !> @param[in]     map_wth            Dofmap for the cell at the base of the
 !>                                    column for potential temperature space
+!> @param[in]     ndf_w3             Number of degrees of freedom per cell for
+!>                                    density space
+!> @param[in]     undf_w3            Unique number of degrees of freedom for
+!>                                    density space
+!> @param[in]     map_w3             Dofmap for the cell at the base of the
+!>                                    column for density space
 !> @param[in]     ndf_2d             No. DOFs per cell for 2D space
 !> @param[in]     undf_2d            No. unique DOFs for 2D space
 !> @param[in]     map_2d             Dofmap for 2D space column base cell
@@ -203,10 +255,17 @@ contains
 !> @param[in]     ndf_rmode_lw       No. of DOFs per cell for rmode_lw space
 !> @param[in]     undf_rmode_lw      No. unique of DOFs for rmode_lw space
 !> @param[in]     map_rmode_lw       Dofmap for rmode_lw space column base cell
+!> @param[in]     ndf_aod_wavel      No. DOFs per cell for aod_wavel
+!> @param[in]     undf_aod_wavel     No. unique DOFs for aod_wavel
+!> @param[in]     map_aod_wavel      Dofmap for the cell at the base of the
+!>                                    column for aod_wavel
 
 subroutine radaer_code( nlayers,                                               &
                         theta_in_wth,                                          &
                         exner_in_wth,                                          &
+                        exner_in_w3,                                           &
+                        rho_in_wth,                                            &
+                        dz_in_wth,                                             &
                         trop_level,                                            &
                         lit_fraction,                                          &
                         n_ait_sol,                                             &
@@ -270,11 +329,25 @@ subroutine radaer_code( nlayers,                                               &
                         aer_lw_absorption,                                     &
                         aer_lw_scattering,                                     &
                         aer_lw_asymmetry,                                      &
+                        aod_ukca_ait_sol,                                      &
+                        aaod_ukca_ait_sol,                                     &
+                        aod_ukca_acc_sol,                                      &
+                        aaod_ukca_acc_sol,                                     &
+                        aod_ukca_cor_sol,                                      &
+                        aaod_ukca_cor_sol,                                     &
+                        aod_ukca_ait_ins,                                      &
+                        aaod_ukca_ait_ins,                                     &
+                        aod_ukca_acc_ins,                                      &
+                        aaod_ukca_acc_ins,                                     &
+                        aod_ukca_cor_ins,                                      &
+                        aaod_ukca_cor_ins,                                     &
                         ndf_wth, undf_wth, map_wth,                            &
+                        ndf_w3, undf_w3, map_w3,                               &
                         ndf_2d, undf_2d, map_2d,                               &
                         ndf_mode, undf_mode, map_mode,                         &
                         ndf_rmode_sw, undf_rmode_sw, map_rmode_sw,             &
-                        ndf_rmode_lw, undf_rmode_lw, map_rmode_lw )
+                        ndf_rmode_lw, undf_rmode_lw, map_rmode_lw,             &
+                        ndf_aod_wavel, undf_aod_wavel, map_aod_wavel )
 
 
   use constants_mod,                     only: r_def, i_def, r_um, i_um
@@ -288,13 +361,8 @@ subroutine radaer_code( nlayers,                                               &
 
   use um_physics_init_mod,               only: n_radaer_mode,                  &
                                                n_aer_mode_sw, n_aer_mode_lw
-  !---------------------------------------
-  ! UM modules
-  !---------------------------------------
 
   use nlsizes_namelist_mod,              only: row_length, rows
-
-  use planet_constants_mod,              only: p_zero, kappa
 
   use ukca_mode_setup,                   only: nmodes, ncp_max,                &
                                                mode_nuc_sol,                   &
@@ -304,11 +372,20 @@ subroutine radaer_code( nlayers,                                               &
                                                cp_su,  cp_bc, cp_oc,           &
                                                cp_cl,  cp_du, cp_so,           &
                                                cp_no3, cp_nn, cp_nh4,          &
-                                               i_ukca_bc_tuned
+                                               i_ukca_bc_tuned,                &
+                                               ip_ukca_mode_aitken,            &
+                                               ip_ukca_mode_accum,             &
+                                               ip_ukca_mode_coarse
 
   use ukca_radaer_band_average_mod,      only: ukca_radaer_band_average
 
   use ukca_radaer_prepare_mod,           only: ukca_radaer_prepare
+
+  use ukca_radaer_compute_aod_mod,       only: ukca_radaer_compute_aod
+
+  use planet_config_mod,                 only: p_zero, kappa, gravity
+
+  use ukca_radaer_precalc,               only: npd_ukca_aod_wavel
 
   implicit none
 
@@ -319,6 +396,10 @@ subroutine radaer_code( nlayers,                                               &
   integer(kind=i_def), intent(in) :: ndf_wth
   integer(kind=i_def), intent(in) :: undf_wth
   integer(kind=i_def), dimension(ndf_wth), intent(in) :: map_wth
+
+  integer(kind=i_def), intent(in) :: ndf_w3
+  integer(kind=i_def), intent(in) :: undf_w3
+  integer(kind=i_def), dimension(ndf_w3), intent(in) :: map_w3
 
   integer(kind=i_def), intent(in) :: ndf_2d
   integer(kind=i_def), intent(in) :: undf_2d
@@ -336,8 +417,17 @@ subroutine radaer_code( nlayers,                                               &
   integer(kind=i_def), intent(in) :: undf_rmode_lw
   integer(kind=i_def), dimension(ndf_rmode_lw), intent(in) :: map_rmode_lw
 
+  integer(kind=i_def), intent(in) :: ndf_aod_wavel
+  integer(kind=i_def), intent(in) :: undf_aod_wavel
+  integer(kind=i_def), dimension(ndf_aod_wavel), intent(in) :: map_aod_wavel
+
   real(kind=r_def), intent(in),    dimension(undf_wth)   :: theta_in_wth
   real(kind=r_def), intent(in),    dimension(undf_wth)   :: exner_in_wth
+
+  real(kind=r_def), intent(in),    dimension(undf_w3)    :: exner_in_w3
+  real(kind=r_def), intent(in),    dimension(undf_wth)   :: rho_in_wth
+  real(kind=r_def), intent(in),    dimension(undf_wth)   :: dz_in_wth
+
   integer(kind=i_def), intent(in), dimension(undf_2d)    :: trop_level
   real(kind=r_def), intent(in),    dimension(undf_2d)    :: lit_fraction
   real(kind=r_def), intent(in),    dimension(undf_wth)   :: n_ait_sol
@@ -402,6 +492,20 @@ subroutine radaer_code( nlayers,                                               &
   real(kind=r_def), intent(inout), dimension(undf_rmode_lw) :: aer_lw_scattering
   real(kind=r_def), intent(inout), dimension(undf_rmode_lw) :: aer_lw_asymmetry
 
+  ! Diagnostic arguments
+  real(kind=r_def), pointer, intent(inout) :: aod_ukca_ait_sol(:)
+  real(kind=r_def), pointer, intent(inout) :: aaod_ukca_ait_sol(:)
+  real(kind=r_def), pointer, intent(inout) :: aod_ukca_acc_sol(:)
+  real(kind=r_def), pointer, intent(inout) :: aaod_ukca_acc_sol(:)
+  real(kind=r_def), pointer, intent(inout) :: aod_ukca_cor_sol(:)
+  real(kind=r_def), pointer, intent(inout) :: aaod_ukca_cor_sol(:)
+  real(kind=r_def), pointer, intent(inout) :: aod_ukca_ait_ins(:)
+  real(kind=r_def), pointer, intent(inout) :: aaod_ukca_ait_ins(:)
+  real(kind=r_def), pointer, intent(inout) :: aod_ukca_acc_ins(:)
+  real(kind=r_def), pointer, intent(inout) :: aaod_ukca_acc_ins(:)
+  real(kind=r_def), pointer, intent(inout) :: aod_ukca_cor_ins(:)
+  real(kind=r_def), pointer, intent(inout) :: aaod_ukca_cor_ins(:)
+
   ! Local variables for the kernel
 
   ! Note - n_ukca_mode excludes the GLOMAP nucleation mode
@@ -429,13 +533,16 @@ subroutine radaer_code( nlayers,                                               &
                                                           ukca_radaer_presc_ssa
 
   ! Loop counters
-  integer(i_um) :: k, i_band, i_mode, i_rmode
+  integer(i_um) :: k, i, i_band, i_mode, i_rmode
 
   ! pressure on theta levels
   real(r_um),dimension( row_length, rows, nlayers ) :: p_theta_levels
 
   ! temperature on theta levels
   real(r_um),dimension( row_length, rows, nlayers ) :: t_theta_levels
+
+  ! d_mass on theta levels
+  real(r_um),dimension( row_length, rows, nlayers ) :: d_mass_theta_levels_um
 
   real(r_um),dimension( n_ukca_cpnt, row_length*rows, nlayers ) ::             &
                                                                ukca_comp_vol_um
@@ -505,6 +612,21 @@ subroutine radaer_code( nlayers,                                               &
   ! This matters for determining whether a level is above the tropopause
   logical, parameter :: l_inverted = .false.
   integer(i_um) :: trindxrad_um( row_length * rows )
+
+  !-----------------------------------------------------------------------
+
+  logical, parameter :: soluble_wanted   = .true.
+  logical, parameter :: soluble_unwanted = .false.
+
+  !-----------------------------------------------------------------------
+
+  ! UKCA modal optical depth diagnostics: full column
+  real(r_um) :: aod_ukca_this_mode_um(  row_length*rows, npd_ukca_aod_wavel )
+  ! Not yet included as diagnostic
+  ! UKCA modal optical depth diagnostics: stratosphere
+  real(r_um) :: sod_ukca_this_mode_um(  row_length*rows, npd_ukca_aod_wavel )
+  ! UKCA modal absorption optical depth diagnostics: full column
+  real(r_um) :: aaod_ukca_this_mode_um( row_length*rows, npd_ukca_aod_wavel )
 
   !-----------------------------------------------------------------------
 
@@ -911,6 +1033,535 @@ subroutine radaer_code( nlayers,                                               &
     end do ! n_sw_bands
 
   end if ! lit points
+
+  !------------------------------------------------
+  ! Calculate mass thickness of vertical levels
+  ! This duplicates calculation of d_mass from set_thermodynamic_kernel_mod
+
+  d_mass_theta_levels_um(1,1,1) = rho_in_wth(  map_wth(2) ) *                  &
+                                  ( dz_in_wth( map_wth(2) ) +                  &
+                                    dz_in_wth( map_wth(1) ) )
+
+  do k = 2, nlayers - 1
+    d_mass_theta_levels_um(1,1,k) = rho_in_wth( map_wth(1) + k ) *             &
+                                     dz_in_wth( map_wth(1) + k )
+  end do
+
+  d_mass_theta_levels_um(1,1,nlayers) = p_zero *                               &
+                                        exner_in_w3( map_w3(1) + nlayers-1 )** &
+                                        ( 1.0_r_def / kappa ) / gravity
+
+  !------------------------------------------------
+  ! Now calculate aod and aaod for Aitken Soluble mode
+
+  if ( ( .not. associated( aod_ukca_ait_sol, empty_real_data ) ) .or.          &
+       ( .not. associated( aaod_ukca_ait_sol, empty_real_data ) ) ) then
+
+    call ukca_radaer_compute_aod(                                              &
+         ! Fixed array dimensions (input)
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_ukca_mode,                                                          &
+         n_ukca_cpnt,                                                          &
+         npd_ukca_aod_wavel,                                                   &
+         ! Fixed array Prescribed ssa dimensions (input)
+         nd_prof_ssa,                                                          &
+         nd_layr_ssa,                                                          &
+         nd_band_ssa,                                                          &
+         ! UKCA_RADAER structure (input)
+         nmodes,                                                               &
+         ncp_max,                                                              &
+         ncp_max_x_nmodes,                                                     &
+         i_cpnt_index,                                                         &
+         i_cpnt_type,                                                          &
+         n_cpnt_in_mode,                                                       &
+         l_nitrate,                                                            &
+         l_soluble,                                                            &
+         l_sustrat,                                                            &
+         i_mode_type,                                                          &
+         l_cornarrow_ins,                                                      &
+         ! Modal diameters from UKCA module
+         ukca_dry_diam_um,                                                     &
+         ukca_wet_diam_um,                                                     &
+         ! Mass thickness of layers
+         d_mass_theta_levels_um,                                               &
+         ! Component volumes
+         ukca_comp_vol_um,                                                     &
+         ! Modal volumes, densities, and water content
+         ukca_modal_vol_um,                                                    &
+         ukca_modal_rho_um,                                                    &
+         ukca_modal_wtv_um,                                                    &
+         ! Modal mass-mixing ratios
+         ukca_mode_mix_ratio_um,                                               &
+         ! Modal number concentrations
+         ukca_modal_number_um,                                                 &
+         ! Type selection
+         ip_ukca_mode_aitken,                                                  &
+         soluble_wanted,                                                       &
+         ! Logical for if prescribed SSA is on
+         l_ukca_radaer_prescribe_ssa,                                          &
+         ! Model level of the tropopause
+         trindxrad_um,                                                         &
+         ! Prescription of single-scattering albedo
+         ukca_radaer_presc_ssa,                                                &
+         ! Modal extinction aerosol opt depth - column (output)
+         aod_ukca_this_mode_um,                                                &
+         ! Modal extinction aerosol opt depth - stratosphere (output)
+         sod_ukca_this_mode_um,                                                &
+         ! Modal absorption aerosol opt depth (output)
+         aaod_ukca_this_mode_um,                                               &
+         ! Fixed array dimensions
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_radaer_mode,                                                        &
+         npd_ukca_aod_wavel )
+
+    !------------------------------------------------
+
+    if ( .not. associated( aod_ukca_ait_sol, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aod_ukca_ait_sol( map_aod_wavel(i) + k ) = aod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+    if ( .not. associated( aaod_ukca_ait_sol, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aaod_ukca_ait_sol( map_aod_wavel(i)+k ) = aaod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+  end if ! Calculate AOD Aitken Soluble mode
+
+  !------------------------------------------------
+  ! Now calculate aod and aaod for Accumulation Soluble mode
+
+  if ( ( .not. associated( aod_ukca_acc_sol, empty_real_data ) ) .or.          &
+       ( .not. associated( aaod_ukca_acc_sol, empty_real_data ) ) ) then
+
+    call ukca_radaer_compute_aod(                                              &
+         ! Fixed array dimensions (input)
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_ukca_mode,                                                          &
+         n_ukca_cpnt,                                                          &
+         npd_ukca_aod_wavel,                                                   &
+         ! Fixed array Prescribed ssa dimensions (input)
+         nd_prof_ssa,                                                          &
+         nd_layr_ssa,                                                          &
+         nd_band_ssa,                                                          &
+         ! UKCA_RADAER structure (input)
+         nmodes,                                                               &
+         ncp_max,                                                              &
+         ncp_max_x_nmodes,                                                     &
+         i_cpnt_index,                                                         &
+         i_cpnt_type,                                                          &
+         n_cpnt_in_mode,                                                       &
+         l_nitrate,                                                            &
+         l_soluble,                                                            &
+         l_sustrat,                                                            &
+         i_mode_type,                                                          &
+         l_cornarrow_ins,                                                      &
+         ! Modal diameters from UKCA module
+         ukca_dry_diam_um,                                                     &
+         ukca_wet_diam_um,                                                     &
+         ! Mass thickness of layers
+         d_mass_theta_levels_um,                                               &
+         ! Component volumes
+         ukca_comp_vol_um,                                                     &
+         ! Modal volumes, densities, and water content
+         ukca_modal_vol_um,                                                    &
+         ukca_modal_rho_um,                                                    &
+         ukca_modal_wtv_um,                                                    &
+         ! Modal mass-mixing ratios
+         ukca_mode_mix_ratio_um,                                               &
+         ! Modal number concentrations
+         ukca_modal_number_um,                                                 &
+         ! Type selection
+         ip_ukca_mode_accum,                                                   &
+         soluble_wanted,                                                       &
+         ! Logical for if prescribed SSA is on
+         l_ukca_radaer_prescribe_ssa,                                          &
+         ! Model level of the tropopause
+         trindxrad_um,                                                         &
+         ! Prescription of single-scattering albedo
+         ukca_radaer_presc_ssa,                                                &
+         ! Modal extinction aerosol opt depth - column (output)
+         aod_ukca_this_mode_um,                                                &
+         ! Modal extinction aerosol opt depth - stratosphere (output)
+         sod_ukca_this_mode_um,                                                &
+         ! Modal absorption aerosol opt depth (output)
+         aaod_ukca_this_mode_um,                                               &
+         ! Fixed array dimensions
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_radaer_mode,                                                        &
+         npd_ukca_aod_wavel )
+
+    !------------------------------------------------
+
+    if ( .not. associated( aod_ukca_acc_sol, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aod_ukca_acc_sol( map_aod_wavel(i) + k ) = aod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+    if ( .not. associated( aaod_ukca_acc_sol, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aaod_ukca_acc_sol( map_aod_wavel(i)+k ) = aaod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+  end if ! Calculate AOD Accumulation Soluble mode
+
+  !------------------------------------------------
+  ! Now calculate aod and aaod for Coarse Soluble mode
+
+  if ( ( .not. associated( aod_ukca_cor_sol, empty_real_data ) ) .or.          &
+       ( .not. associated( aaod_ukca_cor_sol, empty_real_data ) ) ) then
+
+    call ukca_radaer_compute_aod(                                              &
+         ! Fixed array dimensions (input)
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_ukca_mode,                                                          &
+         n_ukca_cpnt,                                                          &
+         npd_ukca_aod_wavel,                                                   &
+         ! Fixed array Prescribed ssa dimensions (input)
+         nd_prof_ssa,                                                          &
+         nd_layr_ssa,                                                          &
+         nd_band_ssa,                                                          &
+         ! UKCA_RADAER structure (input)
+         nmodes,                                                               &
+         ncp_max,                                                              &
+         ncp_max_x_nmodes,                                                     &
+         i_cpnt_index,                                                         &
+         i_cpnt_type,                                                          &
+         n_cpnt_in_mode,                                                       &
+         l_nitrate,                                                            &
+         l_soluble,                                                            &
+         l_sustrat,                                                            &
+         i_mode_type,                                                          &
+         l_cornarrow_ins,                                                      &
+         ! Modal diameters from UKCA module
+         ukca_dry_diam_um,                                                     &
+         ukca_wet_diam_um,                                                     &
+         ! Mass thickness of layers
+         d_mass_theta_levels_um,                                               &
+         ! Component volumes
+         ukca_comp_vol_um,                                                     &
+         ! Modal volumes, densities, and water content
+         ukca_modal_vol_um,                                                    &
+         ukca_modal_rho_um,                                                    &
+         ukca_modal_wtv_um,                                                    &
+         ! Modal mass-mixing ratios
+         ukca_mode_mix_ratio_um,                                               &
+         ! Modal number concentrations
+         ukca_modal_number_um,                                                 &
+         ! Type selection
+         ip_ukca_mode_coarse,                                                  &
+         soluble_wanted,                                                       &
+         ! Logical for if prescribed SSA is on
+         l_ukca_radaer_prescribe_ssa,                                          &
+         ! Model level of the tropopause
+         trindxrad_um,                                                         &
+         ! Prescription of single-scattering albedo
+         ukca_radaer_presc_ssa,                                                &
+         ! Modal extinction aerosol opt depth - column (output)
+         aod_ukca_this_mode_um,                                                &
+         ! Modal extinction aerosol opt depth - stratosphere (output)
+         sod_ukca_this_mode_um,                                                &
+         ! Modal absorption aerosol opt depth (output)
+         aaod_ukca_this_mode_um,                                               &
+         ! Fixed array dimensions
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_radaer_mode,                                                        &
+         npd_ukca_aod_wavel )
+
+    !------------------------------------------------
+
+    if ( .not. associated( aod_ukca_cor_sol, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aod_ukca_cor_sol( map_aod_wavel(i) + k ) = aod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+    if ( .not. associated( aaod_ukca_cor_sol, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aaod_ukca_cor_sol( map_aod_wavel(i)+k ) = aaod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+  end if ! Calculate AOD Coarse Soluble mode
+
+  !------------------------------------------------
+  ! Now calculate aod and aaod for Aitken Insoluble mode
+
+  if ( ( .not. associated( aod_ukca_ait_ins, empty_real_data ) ) .or.          &
+       ( .not. associated( aaod_ukca_ait_ins, empty_real_data ) ) ) then
+
+    call ukca_radaer_compute_aod(                                              &
+         ! Fixed array dimensions (input)
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_ukca_mode,                                                          &
+         n_ukca_cpnt,                                                          &
+         npd_ukca_aod_wavel,                                                   &
+         ! Fixed array Prescribed ssa dimensions (input)
+         nd_prof_ssa,                                                          &
+         nd_layr_ssa,                                                          &
+         nd_band_ssa,                                                          &
+         ! UKCA_RADAER structure (input)
+         nmodes,                                                               &
+         ncp_max,                                                              &
+         ncp_max_x_nmodes,                                                     &
+         i_cpnt_index,                                                         &
+         i_cpnt_type,                                                          &
+         n_cpnt_in_mode,                                                       &
+         l_nitrate,                                                            &
+         l_soluble,                                                            &
+         l_sustrat,                                                            &
+         i_mode_type,                                                          &
+         l_cornarrow_ins,                                                      &
+         ! Modal diameters from UKCA module
+         ukca_dry_diam_um,                                                     &
+         ukca_wet_diam_um,                                                     &
+         ! Mass thickness of layers
+         d_mass_theta_levels_um,                                               &
+         ! Component volumes
+         ukca_comp_vol_um,                                                     &
+         ! Modal volumes, densities, and water content
+         ukca_modal_vol_um,                                                    &
+         ukca_modal_rho_um,                                                    &
+         ukca_modal_wtv_um,                                                    &
+         ! Modal mass-mixing ratios
+         ukca_mode_mix_ratio_um,                                               &
+         ! Modal number concentrations
+         ukca_modal_number_um,                                                 &
+         ! Type selection
+         ip_ukca_mode_aitken,                                                  &
+         soluble_unwanted,                                                     &
+         ! Logical for if prescribed SSA is on
+         l_ukca_radaer_prescribe_ssa,                                          &
+         ! Model level of the tropopause
+         trindxrad_um,                                                         &
+         ! Prescription of single-scattering albedo
+         ukca_radaer_presc_ssa,                                                &
+         ! Modal extinction aerosol opt depth - column (output)
+         aod_ukca_this_mode_um,                                                &
+         ! Modal extinction aerosol opt depth - stratosphere (output)
+         sod_ukca_this_mode_um,                                                &
+         ! Modal absorption aerosol opt depth (output)
+         aaod_ukca_this_mode_um,                                               &
+         ! Fixed array dimensions
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_radaer_mode,                                                        &
+         npd_ukca_aod_wavel )
+
+    !------------------------------------------------
+
+    if ( .not. associated( aod_ukca_ait_ins, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aod_ukca_ait_ins( map_aod_wavel(i) + k ) = aod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+    if ( .not. associated( aaod_ukca_ait_ins, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aaod_ukca_ait_ins( map_aod_wavel(i)+k ) = aaod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+  end if ! Calculate AOD Aitkin Insoluble mode
+
+  !------------------------------------------------
+  ! Now calculate aod and aaod for Accumulation Insoluble mode
+
+  if ( ( .not. associated( aod_ukca_acc_ins, empty_real_data ) ) .or.          &
+       ( .not. associated( aaod_ukca_acc_ins, empty_real_data ) ) ) then
+
+    call ukca_radaer_compute_aod(                                              &
+         ! Fixed array dimensions (input)
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_ukca_mode,                                                          &
+         n_ukca_cpnt,                                                          &
+         npd_ukca_aod_wavel,                                                   &
+         ! Fixed array Prescribed ssa dimensions (input)
+         nd_prof_ssa,                                                          &
+         nd_layr_ssa,                                                          &
+         nd_band_ssa,                                                          &
+         ! UKCA_RADAER structure (input)
+         nmodes,                                                               &
+         ncp_max,                                                              &
+         ncp_max_x_nmodes,                                                     &
+         i_cpnt_index,                                                         &
+         i_cpnt_type,                                                          &
+         n_cpnt_in_mode,                                                       &
+         l_nitrate,                                                            &
+         l_soluble,                                                            &
+         l_sustrat,                                                            &
+         i_mode_type,                                                          &
+         l_cornarrow_ins,                                                      &
+         ! Modal diameters from UKCA module
+         ukca_dry_diam_um,                                                     &
+         ukca_wet_diam_um,                                                     &
+         ! Mass thickness of layers
+         d_mass_theta_levels_um,                                               &
+         ! Component volumes
+         ukca_comp_vol_um,                                                     &
+         ! Modal volumes, densities, and water content
+         ukca_modal_vol_um,                                                    &
+         ukca_modal_rho_um,                                                    &
+         ukca_modal_wtv_um,                                                    &
+         ! Modal mass-mixing ratios
+         ukca_mode_mix_ratio_um,                                               &
+         ! Modal number concentrations
+         ukca_modal_number_um,                                                 &
+         ! Type selection
+         ip_ukca_mode_accum,                                                   &
+         soluble_unwanted,                                                     &
+         ! Logical for if prescribed SSA is on
+         l_ukca_radaer_prescribe_ssa,                                          &
+         ! Model level of the tropopause
+         trindxrad_um,                                                         &
+         ! Prescription of single-scattering albedo
+         ukca_radaer_presc_ssa,                                                &
+         ! Modal extinction aerosol opt depth - column (output)
+         aod_ukca_this_mode_um,                                                &
+         ! Modal extinction aerosol opt depth - stratosphere (output)
+         sod_ukca_this_mode_um,                                                &
+         ! Modal absorption aerosol opt depth (output)
+         aaod_ukca_this_mode_um,                                               &
+         ! Fixed array dimensions
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_radaer_mode,                                                        &
+         npd_ukca_aod_wavel )
+
+    !------------------------------------------------
+
+    if ( .not. associated( aod_ukca_acc_ins, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aod_ukca_acc_ins( map_aod_wavel(i) + k ) = aod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+    if ( .not. associated( aaod_ukca_acc_ins, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aaod_ukca_acc_ins( map_aod_wavel(i)+k ) = aaod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+  end if ! Calculate AOD Accumulation Insoluble mode
+
+  !------------------------------------------------
+  ! Now calculate aod and aaod for Coarse Insoluble mode
+
+  if ( ( .not. associated( aod_ukca_cor_ins, empty_real_data ) ) .or.          &
+       ( .not. associated( aaod_ukca_cor_ins, empty_real_data ) ) ) then
+
+    call ukca_radaer_compute_aod(                                              &
+         ! Fixed array dimensions (input)
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_ukca_mode,                                                          &
+         n_ukca_cpnt,                                                          &
+         npd_ukca_aod_wavel,                                                   &
+         ! Fixed array Prescribed ssa dimensions (input)
+         nd_prof_ssa,                                                          &
+         nd_layr_ssa,                                                          &
+         nd_band_ssa,                                                          &
+         ! UKCA_RADAER structure (input)
+         nmodes,                                                               &
+         ncp_max,                                                              &
+         ncp_max_x_nmodes,                                                     &
+         i_cpnt_index,                                                         &
+         i_cpnt_type,                                                          &
+         n_cpnt_in_mode,                                                       &
+         l_nitrate,                                                            &
+         l_soluble,                                                            &
+         l_sustrat,                                                            &
+         i_mode_type,                                                          &
+         l_cornarrow_ins,                                                      &
+         ! Modal diameters from UKCA module
+         ukca_dry_diam_um,                                                     &
+         ukca_wet_diam_um,                                                     &
+         ! Mass thickness of layers
+         d_mass_theta_levels_um,                                               &
+         ! Component volumes
+         ukca_comp_vol_um,                                                     &
+         ! Modal volumes, densities, and water content
+         ukca_modal_vol_um,                                                    &
+         ukca_modal_rho_um,                                                    &
+         ukca_modal_wtv_um,                                                    &
+         ! Modal mass-mixing ratios
+         ukca_mode_mix_ratio_um,                                               &
+         ! Modal number concentrations
+         ukca_modal_number_um,                                                 &
+         ! Type selection
+         ip_ukca_mode_coarse,                                                  &
+         soluble_unwanted,                                                     &
+         ! Logical for if prescribed SSA is on
+         l_ukca_radaer_prescribe_ssa,                                          &
+         ! Model level of the tropopause
+         trindxrad_um,                                                         &
+         ! Prescription of single-scattering albedo
+         ukca_radaer_presc_ssa,                                                &
+         ! Modal extinction aerosol opt depth - column (output)
+         aod_ukca_this_mode_um,                                                &
+         ! Modal extinction aerosol opt depth - stratosphere (output)
+         sod_ukca_this_mode_um,                                                &
+         ! Modal absorption aerosol opt depth (output)
+         aaod_ukca_this_mode_um,                                               &
+         ! Fixed array dimensions
+         npd_profile,                                                          &
+         nlayers,                                                              &
+         n_radaer_mode,                                                        &
+         npd_ukca_aod_wavel )
+
+    !------------------------------------------------
+
+    if ( .not. associated( aod_ukca_cor_ins, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aod_ukca_cor_ins( map_aod_wavel(i) + k ) = aod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+    if ( .not. associated( aaod_ukca_cor_ins, empty_real_data ) ) then
+      do k = 1, npd_ukca_aod_wavel
+        do i = 1, row_length
+          aaod_ukca_cor_ins( map_aod_wavel(i)+k ) = aaod_ukca_this_mode_um(i,k)
+        end do
+      end do
+    end if
+
+  end if ! Calculate AOD Coarse Insoluble mode
+
+  !------------------------------------------------
 
 end subroutine radaer_code
 

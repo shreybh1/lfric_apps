@@ -47,6 +47,8 @@ module space_from_metadata_mod
     = 'full_level_face_grid'
   character(str_def), parameter :: var_full_face_grid                          &
     = 'var_full_face_grid'
+  character(str_def), parameter :: var_face                                    &
+    = 'var_face'
   character(str_def), parameter :: half_level_face_grid                        &
     = 'half_level_face_grid'
   character(str_def), parameter :: half_level_edge_grid                        &
@@ -94,6 +96,8 @@ contains
       ! noop
     else if (try_split(grid_ref, axis_ref, node_grid)) then
       ! noop
+    else if (try_split(grid_ref, axis_ref, var_face)) then
+      ! noop
     else
       ! no axis_ref - keep grid_ref unchanged
       axis_ref = ''
@@ -114,6 +118,7 @@ contains
         grid_ref == var_full_face_grid) then
       fsenum = Wtheta
     else if (grid_ref == half_level_face_grid                                 &
+      .or. grid_ref == var_face                                               &
       .or. domain_ref == 'face') then
       fsenum = W3
     else if (grid_ref == half_level_edge_grid) then

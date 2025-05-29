@@ -28,7 +28,7 @@ module multidata_field_dimensions_mod
 #ifdef UM_PHYSICS
       !                   1         2         3
       !          123456789012345678901234567890
-      character(30), parameter :: multidata_items(30) = &
+      character(30), parameter :: multidata_items(31) = &
             [character(30) ::                           &
                 'plant_func_types',                     &
                 'sea_ice_categories',                   &
@@ -53,6 +53,7 @@ module multidata_field_dimensions_mod
                 'csat_lvls_atb_bins',                   &
                 'horizon_angles',                       &
                 'horizon_aspects',                      &
+                'aod_wavel',                            &
                 'sw_bands',                             &
                 'lw_bands',                             &
                 'sw_bands_surface_tiles',               &
@@ -153,9 +154,13 @@ end subroutine sync_multidata_field_dimensions
                                        n_horiz_layer,      &
                                        n_horiz_ang
     use section_choice_config_mod, &
-                                 only: radiation, &
-                                       radiation_socrates, &
+                                 only: radiation,                              &
+                                       radiation_socrates,                     &
                                        radiation_none
+
+    use ukca_radaer_precalc,     only: npd_ukca_aod_wavel
+
+    use aerosol_config_mod,      only: l_radaer
 #endif
 
     use log_mod,                 only: log_event, LOG_LEVEL_ERROR,             &
@@ -248,6 +253,14 @@ end subroutine sync_multidata_field_dimensions
             else
                   dim = 1
             end if
+      case('aod_wavel')
+
+           if ( l_radaer ) then
+                  dim = npd_ukca_aod_wavel
+           else
+                  dim = 1
+           end if
+
       case ('')
             dim = 1 ! ordinary (non-multidata) field
 #endif

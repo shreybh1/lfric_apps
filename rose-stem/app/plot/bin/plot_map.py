@@ -86,6 +86,18 @@ calipso_total_backscatter = ['calipso_total_backscatter', 0, 5e-5]
 isccp_ctp_tau = ['isccp_ctp_tau', 0, 1]
 sw_aod_rts = ['sw_aer_optical_depth_rts', 0, 1e-3]
 lw_aod_rts = ['lw_aer_optical_depth_rts', 0, 1e-3]
+aod_ukca_ait_sol = ['aod_ukca_ait_sol', 0, 2]
+aaod_ukca_ait_sol = ['aaod_ukca_ait_sol', 0, 2]
+aod_ukca_acc_sol = ['aod_ukca_acc_sol', 0, 2]
+aaod_ukca_acc_sol = ['aaod_ukca_acc_sol', 0, 2]
+aod_ukca_cor_sol = ['aod_ukca_cor_sol', 0, 2]
+aaod_ukca_cor_sol = ['aaod_ukca_cor_sol', 0, 2]
+aod_ukca_ait_ins = ['aod_ukca_ait_ins', 0, 2]
+aaod_ukca_ait_ins = ['aaod_ukca_ait_ins', 0, 2]
+aod_ukca_acc_ins = ['aod_ukca_acc_ins', 0, 2]
+aaod_ukca_acc_ins = ['aaod_ukca_acc_ins', 0, 2]
+aod_ukca_cor_ins = ['aod_ukca_cor_ins', 0, 2]
+aaod_ukca_cor_ins = ['aaod_ukca_cor_ins', 0, 2]
 sw_net_surf_rts = ['sw_net_surf_rts', 0, 1200]
 sw_direct_toa_rts = ['sw_direct_toa_rts', 0, 1450]
 sw_up_toa_rts = ['sw_up_toa_rts', 0, 600]
@@ -247,6 +259,18 @@ if __name__ == "__main__":
         do_plot(datapath, cloud_weight_extinction_rts,   plotpath, plotlevel=17)
         do_plot(datapath, sw_aod_rts,             plotpath, plotlevel=38)
         do_plot(datapath, lw_aod_rts,             plotpath, plotlevel=38)
+        do_plot(datapath, aod_ukca_ait_sol,       plotpath)
+        do_plot(datapath, aaod_ukca_ait_sol,      plotpath)
+        do_plot(datapath, aod_ukca_acc_sol,       plotpath)
+        do_plot(datapath, aaod_ukca_acc_sol,      plotpath)
+        do_plot(datapath, aod_ukca_cor_sol,       plotpath)
+        do_plot(datapath, aaod_ukca_cor_sol,      plotpath)
+        do_plot(datapath, aod_ukca_ait_ins,       plotpath)
+        do_plot(datapath, aaod_ukca_ait_ins,      plotpath)
+        do_plot(datapath, aod_ukca_acc_ins,       plotpath)
+        do_plot(datapath, aaod_ukca_acc_ins,      plotpath)
+        do_plot(datapath, aod_ukca_cor_ins,       plotpath)
+        do_plot(datapath, aaod_ukca_cor_ins,      plotpath)
         do_plot(datapath, sw_net_surf_rts,        plotpath)
         do_plot(datapath, sw_direct_toa_rts,      plotpath)
         do_plot(datapath, sw_up_toa_rts,          plotpath)

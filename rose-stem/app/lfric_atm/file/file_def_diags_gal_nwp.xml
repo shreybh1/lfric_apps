@@ -117,6 +117,18 @@
       <field field_ref="radiation__warm_cloud_top_re_microns_rts"/>
       <field field_ref="processed__sw_aer_optical_depth_rts"/>
       <field field_ref="processed__lw_aer_optical_depth_rts"/>
+      <field field_ref="aerosol__aod_ukca_ait_sol"/>
+      <field field_ref="aerosol__aaod_ukca_ait_sol"/>
+      <field field_ref="aerosol__aod_ukca_acc_sol"/>
+      <field field_ref="aerosol__aaod_ukca_acc_sol"/>
+      <field field_ref="aerosol__aod_ukca_cor_sol"/>
+      <field field_ref="aerosol__aaod_ukca_cor_sol"/>
+      <field field_ref="aerosol__aod_ukca_ait_ins"/>
+      <field field_ref="aerosol__aaod_ukca_ait_ins"/>
+      <field field_ref="aerosol__aod_ukca_acc_ins"/>
+      <field field_ref="aerosol__aaod_ukca_acc_ins"/>
+      <field field_ref="aerosol__aod_ukca_cor_ins"/>
+      <field field_ref="aerosol__aaod_ukca_cor_ins"/>
     </field_group>
 
     <!-- Full model level diagnostics - not being interpolated to pressure levels -->

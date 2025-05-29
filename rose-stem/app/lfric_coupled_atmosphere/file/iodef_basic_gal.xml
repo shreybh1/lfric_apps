@@ -208,6 +208,19 @@
         <field id="aerosol__pvol_om_ait_ins" name="pvol_om_ait_ins" long_name="partial_volume_of_organic_matter_in_aitken_insoluble_mode" unit="m3" grid_ref="var_full_face_grid" />
         <field id="aerosol__pvol_du_acc_ins" name="pvol_du_acc_ins" long_name="partial_volume_of_dust_in_accumulation_insoluble_mode" unit="m3" grid_ref="var_full_face_grid" />
         <field id="aerosol__pvol_du_cor_ins" name="pvol_du_cor_ins" long_name="partial_volume_of_dust_in_coarse_insoluble_mode" unit="m3" grid_ref="var_full_face_grid" />
+	<!-- aerosol aod diagnostics -->
+        <field id="aerosol__aod_ukca_ait_sol"  name="aod_ukca_ait_sol"  long_name="modal_extinction_aerosol_optical_depth_aitken_soluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aaod_ukca_ait_sol" name="aaod_ukca_ait_sol" long_name="modal_absorption_aerosol_optical_depth_aitken_soluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aod_ukca_acc_sol"  name="aod_ukca_acc_sol"  long_name="modal_extinction_aerosol_optical_depth_accumulation_soluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aaod_ukca_acc_sol" name="aaod_ukca_acc_sol" long_name="modal_absorption_aerosol_optical_depth_accumulation_soluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aod_ukca_cor_sol"  name="aod_ukca_cor_sol"  long_name="modal_extinction_aerosol_optical_depth_coarse_soluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aaod_ukca_cor_sol" name="aaod_ukca_cor_sol" long_name="modal_absorption_aerosol_optical_depth_coarse_soluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aod_ukca_ait_ins"  name="aod_ukca_ait_ins"  long_name="modal_extinction_aerosol_optical_depth_aitken_insoluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aaod_ukca_ait_ins" name="aaod_ukca_ait_ins" long_name="modal_absorption_aerosol_optical_depth_aitken_insoluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aod_ukca_acc_ins"  name="aod_ukca_acc_ins"  long_name="modal_extinction_aerosol_optical_depth_accumulation_insoluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aaod_ukca_acc_ins" name="aaod_ukca_acc_ins" long_name="modal_absorption_aerosol_optical_depth_accumulation_insoluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aod_ukca_cor_ins"  name="aod_ukca_cor_ins"  long_name="modal_extinction_aerosol_optical_depth_coarse_insoluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
+        <field id="aerosol__aaod_ukca_cor_ins" name="aaod_ukca_cor_ins" long_name="modal_absorption_aerosol_optical_depth_coarse_insoluble_mode_radiative_timestep" unit="1" domain_ref="face" axis_ref="aod_wavel" />
 	<!-- cloud diagnostics -->
 	<field id="cloud__area_fraction" name="area_fraction" long_name="area_cloud_fraction" unit="1" grid_ref="full_level_face_grid" />
 	<field id="cloud__bulk_fraction" name="bulk_fraction" long_name="bulk_cloud_fraction" unit="1" grid_ref="full_level_face_grid" />

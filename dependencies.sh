@@ -31,5 +31,5 @@ export shumlib_rev=apps2.1
 export shumlib_sources=
 export socrates_rev=1769
 export socrates_sources=
-export ukca_rev=apps2.1
+export ukca_rev=6218
 export ukca_sources=

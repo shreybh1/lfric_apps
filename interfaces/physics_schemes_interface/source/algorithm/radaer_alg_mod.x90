@@ -34,6 +34,13 @@ module radaer_alg_mod
   use intermesh_mappings_alg_mod, &
                            only: map_scalar_intermesh
 
+  use radaer_main_diags_mod, only: initialise_main_diags_for_radaer,           &
+                                   output_main_diags_for_radaer
+
+  use sci_geometric_constants_mod, only: get_dz_at_wtheta
+
+  use ukca_radaer_precalc,  only: npd_ukca_aod_wavel
+
   implicit none
 
   private
@@ -43,16 +50,19 @@ contains
 
   !>@brief         Run the UM RADAER scheme
   !>@details       The UM RADAER scheme calculates required fields for socrates.
-  !>@param[in]     aerosol_fields        glomap aerosol related fields
+  !>@param[in]     rho_in_wth            Rho in theta space
   !>@param[in]     theta_in_wth          Potential temperature (theta) wth space
   !>@param[in]     exner_in_wth          Exner Pressure in theta space
+  !>@param[in]     exner_in_w3           Exner Pressure in w3 space
   !>@param[in]     trop_level            Level of tropopause
   !>@param[in]     timestep              Current timestep number
 
   subroutine radaer_alg( aerosol_fields,                                       &
                          radiation_fields,                                     &
+                         rho_in_wth,                                           &
                          theta_in_wth,                                         &
                          exner_in_wth,                                         &
+                         exner_in_w3,                                          &
                          trop_level,                                           &
                          aerosol_mesh,                                         &
                          aerosol_twod_mesh,                                    &
@@ -65,8 +75,11 @@ contains
     ! Arguments
     type( field_collection_type ), intent( in )    :: aerosol_fields
     type( field_collection_type ), intent( in )    :: radiation_fields
+
+    type( field_type ), intent( in )               :: rho_in_wth
     type( field_type ), intent( in )               :: theta_in_wth
     type( field_type ), intent( in )               :: exner_in_wth
+    type( field_type ), intent( in )               :: exner_in_w3
     type( integer_field_type ), intent( in )       :: trop_level
     type(mesh_type), intent( in ),        pointer  :: aerosol_mesh
     type(mesh_type), intent( in ),        pointer  :: aerosol_twod_mesh
@@ -74,6 +87,10 @@ contains
 
     type(function_space_type), pointer :: w3_2d_aero => null()
     type(function_space_type), pointer :: wth_aero => null()
+
+    type(mesh_type), pointer :: mesh => null()
+
+    type( field_type ), pointer :: dz_in_wth => null()
 
     ! Temporary unpacked fields from collection aerosol_fields
     type( field_type ), pointer :: n_ait_sol => null()
@@ -158,10 +175,26 @@ contains
                                   aer_lw_scattering_coarse, &
                                   aer_lw_asymmetry_coarse
 
+    type( field_type ) :: aod_ukca_ait_sol
+    type( field_type ) :: aaod_ukca_ait_sol
+    type( field_type ) :: aod_ukca_acc_sol
+    type( field_type ) :: aaod_ukca_acc_sol
+    type( field_type ) :: aod_ukca_cor_sol
+    type( field_type ) :: aaod_ukca_cor_sol
+    type( field_type ) :: aod_ukca_ait_ins
+    type( field_type ) :: aaod_ukca_ait_ins
+    type( field_type ) :: aod_ukca_acc_ins
+    type( field_type ) :: aaod_ukca_acc_ins
+    type( field_type ) :: aod_ukca_cor_ins
+    type( field_type ) :: aaod_ukca_cor_ins
+
     if ( subroutine_timers ) call timer('radaer_alg')
 
     ! Call on radiation time steps only
     if (mod(timestep-1_i_def, n_radaer_step*n_radstep) == 0) then
+
+      mesh      => theta_in_wth%get_mesh()
+      dz_in_wth => get_dz_at_wtheta(mesh%get_id())
 
       ! Unpack fields from aerosol_fields
       call aerosol_fields%get_field('n_ait_sol', n_ait_sol)
@@ -285,8 +318,26 @@ contains
         call radiation_fields%get_field('aer_lw_asymmetry', aer_lw_asymmetry_aero)
       end if
 
+      ! Initialise radaer diagnostics
+      call initialise_main_diags_for_radaer(  aod_ukca_ait_sol,                &
+                                             aaod_ukca_ait_sol,                &
+                                              aod_ukca_acc_sol,                &
+                                             aaod_ukca_acc_sol,                &
+                                              aod_ukca_cor_sol,                &
+                                             aaod_ukca_cor_sol,                &
+                                              aod_ukca_ait_ins,                &
+                                             aaod_ukca_ait_ins,                &
+                                              aod_ukca_acc_ins,                &
+                                             aaod_ukca_acc_ins,                &
+                                              aod_ukca_cor_ins,                &
+                                             aaod_ukca_cor_ins,                &
+                                             trop_level )
+
       call invoke( radaer_kernel_type( theta_in_wth,                           &
                                        exner_in_wth,                           &
+                                       exner_in_w3,                            &
+                                       rho_in_wth,                             &
+                                       dz_in_wth,                              &
                                        trop_level,                             &
                                        lit_fraction_rts_aero,                  &
                                        n_ait_sol,                              &
@@ -349,23 +400,61 @@ contains
                                        aer_sw_asymmetry_aero,                  &
                                        aer_lw_absorption_aero,                 &
                                        aer_lw_scattering_aero,                 &
-                                       aer_lw_asymmetry_aero ) )
+                                       aer_lw_asymmetry_aero,                  &
+                                       aod_ukca_ait_sol,                       &
+                                       aaod_ukca_ait_sol,                      &
+                                       aod_ukca_acc_sol,                       &
+                                       aaod_ukca_acc_sol,                      &
+                                       aod_ukca_cor_sol,                       &
+                                       aaod_ukca_cor_sol,                      &
+                                       aod_ukca_ait_ins,                       &
+                                       aaod_ukca_ait_ins,                      &
+                                       aod_ukca_acc_ins,                       &
+                                       aaod_ukca_acc_ins,                      &
+                                       aod_ukca_cor_ins,                       &
+                                       aaod_ukca_cor_ins ) )
 
       if ( coarse_rad_aerosol ) then
-        call map_scalar_intermesh(aer_mix_ratio, aer_mix_ratio_aero, &
-                                  source_mask=lit_fraction_rts_aero, lowest_order_flag=lowest_order_aero_flag)
-        call map_scalar_intermesh(aer_sw_absorption, aer_sw_absorption_aero, &
-                                  source_mask=lit_fraction_rts_aero, lowest_order_flag=lowest_order_aero_flag)
-        call map_scalar_intermesh(aer_sw_scattering, aer_sw_scattering_aero,&
-                                  source_mask=lit_fraction_rts_aero, lowest_order_flag=lowest_order_aero_flag)
-        call map_scalar_intermesh(aer_sw_asymmetry, aer_sw_asymmetry_aero, &
-                                  source_mask=lit_fraction_rts_aero, lowest_order_flag=lowest_order_aero_flag)
-        call map_scalar_intermesh(aer_lw_absorption, aer_lw_absorption_aero, &
-                                  source_mask=lit_fraction_rts_aero, lowest_order_flag=lowest_order_aero_flag)
-        call map_scalar_intermesh(aer_lw_scattering, aer_lw_scattering_aero, &
-                                  source_mask=lit_fraction_rts_aero, lowest_order_flag=lowest_order_aero_flag)
-        call map_scalar_intermesh(aer_lw_asymmetry, aer_lw_asymmetry_aero, &
-                                  source_mask=lit_fraction_rts_aero, lowest_order_flag=lowest_order_aero_flag)
+        call map_scalar_intermesh( aer_mix_ratio, aer_mix_ratio_aero,          &
+                                   source_mask=lit_fraction_rts_aero,          &
+                                   lowest_order_flag=lowest_order_aero_flag )
+        call map_scalar_intermesh( aer_sw_absorption, aer_sw_absorption_aero,  &
+                                   source_mask=lit_fraction_rts_aero,          &
+                                   lowest_order_flag=lowest_order_aero_flag )
+        call map_scalar_intermesh( aer_sw_scattering, aer_sw_scattering_aero,  &
+                                   source_mask=lit_fraction_rts_aero,          &
+                                   lowest_order_flag=lowest_order_aero_flag )
+        call map_scalar_intermesh( aer_sw_asymmetry, aer_sw_asymmetry_aero,    &
+                                   source_mask=lit_fraction_rts_aero,          &
+                                   lowest_order_flag=lowest_order_aero_flag )
+        call map_scalar_intermesh( aer_lw_absorption, aer_lw_absorption_aero,  &
+                                   source_mask=lit_fraction_rts_aero,          &
+                                   lowest_order_flag=lowest_order_aero_flag )
+        call map_scalar_intermesh( aer_lw_scattering, aer_lw_scattering_aero,  &
+                                   source_mask=lit_fraction_rts_aero,          &
+                                   lowest_order_flag=lowest_order_aero_flag )
+        call map_scalar_intermesh( aer_lw_asymmetry, aer_lw_asymmetry_aero,    &
+                                   source_mask=lit_fraction_rts_aero,          &
+                                   lowest_order_flag=lowest_order_aero_flag )
+      end if
+
+      ! Diagnostic output
+      if ( write_diag .and. use_xios_io ) then
+
+        ! Process radaer diagnostics
+        call output_main_diags_for_radaer(  aod_ukca_ait_sol,                  &
+                                           aaod_ukca_ait_sol,                  &
+                                            aod_ukca_acc_sol,                  &
+                                           aaod_ukca_acc_sol,                  &
+                                            aod_ukca_cor_sol,                  &
+                                           aaod_ukca_cor_sol,                  &
+                                            aod_ukca_ait_ins,                  &
+                                           aaod_ukca_ait_ins,                  &
+                                            aod_ukca_acc_ins,                  &
+                                           aaod_ukca_acc_ins,                  &
+                                            aod_ukca_cor_ins,                  &
+                                           aaod_ukca_cor_ins )
+
       end if
 
     end if

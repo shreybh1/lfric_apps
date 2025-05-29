@@ -36,6 +36,7 @@
   <axis id="one_time_axis" name="one_time_axis" n_glo="1" />
 
   <axis id="scalar_axis" name="scalar" n_glo="1" />
+  <axis id="aod_wavel" name="aod_wavel" />
 
 <!-- Zoom filters -->
   <axis id="surface_tiles_sea_zoom" axis_ref="surface_tiles">
