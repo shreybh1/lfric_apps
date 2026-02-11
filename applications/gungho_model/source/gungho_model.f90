@@ -72,6 +72,7 @@ program gungho_model
 
   call modeldb%io_contexts%initialise(application_name, 100)
 
+  call init_time( modeldb )
   call init_comm( application_name, modeldb )
 
   call init_config( filename, gungho_required_namelists, &
@@ -82,7 +83,7 @@ program gungho_model
   call init_timing( modeldb%mpi%get_comm(), lsubroutine_timers, application_name, timer_output_path )
   nullify( io_nml )
   call init_collections()
-  call init_time( modeldb )
+  !call init_time( modeldb )
   call init_counters( application_name )
   deallocate( filename )
 
