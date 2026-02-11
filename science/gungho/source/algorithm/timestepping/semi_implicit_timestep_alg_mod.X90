@@ -662,8 +662,15 @@ contains
     logical(l_def)               :: murk_lbc
     real(r_def)                  :: tau_r
     integer(tik)                 :: id
+    integer, save                :: counter = 0
 
-    if ( LPROF ) call start_timing( id, 'semi_implicit_timestep_alg' )
+    !if ( LPROF ) call start_timing( id, 'semi_implicit_timestep_alg' )
+    if ( LPROF ) then
+      if (counter == 0 ) then
+        call start_timing( id, 'semi_implicit_timestep_alg_iter0' )
+      end if
+      call start_timing( id, 'semi_implicit_timestep_alg' )
+    end if
 
     cast_dt = real(model_clock%get_seconds_per_step(), r_def)
 
@@ -1157,6 +1164,13 @@ contains
     nullify( mm_wt, mm_vel )
 
     if ( LPROF ) call stop_timing( id, 'semi_implicit_timestep_alg' )
+    if ( LPROF ) then
+      if (counter == 0 ) then
+        call stop_timing( id, 'semi_implicit_timestep_alg_iter0' )
+      end if
+      call stop_timing('semi_implicit_timestep_alg_iter0')
+      counter = counter + 1
+    end if
 
   end subroutine run_step
 
